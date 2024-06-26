@@ -1,0 +1,135 @@
+/* Survey.css */
+.container {
+    background-color: #2d2d2d;
+    border-radius: 15px;
+    width: 100vw;
+    margin: 0 auto;
+    text-align: center;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.title {
+    font-family: 'Courier New', Courier, monospace;
+    color: #e2e2e2;
+    margin-bottom: 20px;
+    font-size: 24px;
+}
+
+.questionText{
+    width: 70vw;
+    margin-left: 15%;
+    margin-right: 15%;
+
+}
+
+.question {
+    margin-bottom: 25px;
+}
+
+.surveyOptions {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    gap: 3em;
+    margin-top: 10px;
+}
+
+.surveyAnswer {
+    display: none;
+}
+
+.surveyAnswer + label {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 18px;
+    padding: 10px 20px;
+    border: 2px solid #555;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    color: #e2e2e2;
+    background-color: #444;
+    position: relative;
+}
+
+.surveyAnswer + label:hover {
+    background-color: #666;
+    border-color: #888;
+}
+
+.surveyAnswer:checked + label {
+    background-color: rgba(10, 228, 10, 0.952);
+    border-color: #14ff47;
+    color: #fff;
+    box-shadow: 0 0 10px lime;
+}
+
+.submitButton {
+    background-color: #1e90ff;
+    width: 15vw;
+    color: white;
+    padding: 20px;
+    border: none;
+    border-radius: 15px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-bottom: 2em;
+}
+
+.submitButton:hover {
+    background-color: #1c7ed6;
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+.surveyAnswer:checked + label {
+    animation: pulse 1s infinite;
+}
+
+
+
+@media (max-width: 600px) {
+    .container {
+        width: 100vw;
+        
+    }
+
+    .title {
+        font-size: 2em;
+    }
+
+    .surveyOptions {
+        gap: 0.5em;
+    }
+
+    .surveyAnswer + label {
+        font-size: 0.8em;
+
+    }
+
+    .submitButton {
+        background-color: #1e90ff;
+        width: 60vw;
+        color: white;
+        padding: 20px;
+        border: none;
+        margin-top: 3em;
+        border-radius: 15px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        margin-bottom: 2em;
+    }
+    
+    .submitButton:hover {
+        background-color: #1c7ed6;
+    }
+}
