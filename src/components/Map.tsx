@@ -1,8 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet-draw';
+import 'leaflet-routing-machine';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-draw/dist/leaflet.draw.css';
+
 import * as turf from '@turf/turf';
 import axios from 'axios';
 
@@ -13,10 +15,10 @@ interface MapProps {
 const Map: React.FC<MapProps> = ({ surveyData }) => {
   const mapRef = useRef<L.Map | null>(null);
   const drawnItemsRef = useRef<L.FeatureGroup<any> | null>(null);
-  const [center, setCenter] = useState<[number, number]>([44.494887, 11.3426]);
+  const [center, _setCenter] = useState<[number, number]>([44.494887, 11.3426]);
+  const [circleLayer, setCircleLayer] = useState<L.Circle | null>(null); // State to keep track of the circle layer
 
   useEffect(() => {
-    setCenter([44.494887, 11.3426]);
     mapRef.current = L.map('map', {
       center,
       zoom: 13,
@@ -33,7 +35,7 @@ const Map: React.FC<MapProps> = ({ surveyData }) => {
     const drawControl = new L.Control.Draw();
     mapRef.current.addControl(drawControl);
 
-    mapRef.current.on(L.Draw.Event.CREATED, (event) => {
+    mapRef.current.on(L.Draw.Event.CREATED, async (event) => {
       const layer = event.layer;
       drawnItemsRef.current?.addLayer(layer);
 
@@ -52,6 +54,30 @@ const Map: React.FC<MapProps> = ({ surveyData }) => {
             weight: 2
           }
         }).addTo(mapRef.current!);
+      }
+
+      if (layer instanceof L.Circle) {
+        // Remove the existing circle layer if any
+        if (circleLayer) {
+          mapRef.current?.removeLayer(circleLayer);
+          drawnItemsRef.current?.removeLayer(circleLayer);
+        }
+
+        setCircleLayer(layer); // Update the state with the new circle layer
+
+        let r = layer.getRadius();
+        let geojson = layer.toGeoJSON();
+        axios.post('http://localhost:8083', { r, geojson })
+          .then(response => {
+            response.data.forEach((item: { st_asgeojson: string }) => {
+              let geojson = JSON.parse(item.st_asgeojson);
+              L.geoJSON(geojson, { /*eventuale stile*/ }
+              ).addTo(mapRef.current!);
+            });
+          })
+          .catch(error => {
+            console.error('Error sending geometry to server:', error);
+          });
       }
     });
 
@@ -72,52 +98,28 @@ const Map: React.FC<MapProps> = ({ surveyData }) => {
         }).addTo(mapRef.current!);
       });
 
-    axios.get('http://localhost:8083/g')
-      .then((response) => {
-        response.data.forEach((item: { lat: number; lon: number; }) => {
-          const marker = L.marker([item.lat, item.lon]).addTo(mapRef.current!);
-          const point1 = turf.point([item.lon, item.lat]);
-          const point2 = turf.point([center[1], center[0]]);
-          const distance = turf.distance(point1, point2, { units: 'kilometers' });
-
-          marker.bindPopup(`Distanza dal centro: ${distance.toFixed(2)} km`).openPopup();
-
-          const randomColor = getRandomColor();
-          const line = turf.lineString([[center[1], center[0]], [item.lon, item.lat]]);
-          L.geoJSON(line, {
-            style: {
-              color: randomColor,
-              weight: 2
-            }
-          }).addTo(mapRef.current!);
-        });
-      })
-      .catch((error) => {
-        console.error('Error fetching data:', error);
-      });
-
-    axios.get('http://localhost:8083')
-      .then((response) => {
-        response.data.forEach((item: { st_asgeojson: string }) => {
-          const geojson = JSON.parse(item.st_asgeojson);
-          L.geoJSON(geojson, {
-            style: {
-              color: getRandomColor(),
-              weight: 2
-            }
-          }).addTo(mapRef.current!);
-        });
-      })
-      .catch((error) => {
-        console.error('Errore durante il recupero dei dati delle geofence:', error);
-      });
-
     const marker1 = L.marker(center).addTo(mapRef.current!);
     const marker2 = L.marker([44.500456, 11.346367]).addTo(mapRef.current!);
     const point1 = turf.point([marker1.getLatLng().lng, marker1.getLatLng().lat]);
     const point2 = turf.point([marker2.getLatLng().lng, marker2.getLatLng().lat]);
     const distance = turf.distance(point1, point2, { units: 'kilometers' });
 
+   //calcolo percorso basato su strade dati 2 punti
+    L.Routing.control({
+      waypoints:[
+        L.latLng(marker1.getLatLng().lat,marker1.getLatLng().lng,),
+        L.latLng(marker2.getLatLng().lat,marker2.getLatLng().lng,)
+      ],
+      lineOptions: {
+        styles: [{ color: 'black', opacity: 1, weight: 3 }],
+        extendToWaypoints: true, // Estendi la linea fino ai punti di passaggio
+        missingRouteTolerance: 100 // Tolleranza per la ricerca di un percorso mancante in metri
+        
+      },
+    
+     
+
+    }).addTo(mapRef.current)
     marker2.bindPopup(`Distanza da punto 1: ${distance.toFixed(2)} km`);
     const line = turf.lineString([[marker1.getLatLng().lng, marker1.getLatLng().lat], [marker2.getLatLng().lng, marker2.getLatLng().lat]]);
     L.geoJSON(line, {
@@ -130,7 +132,7 @@ const Map: React.FC<MapProps> = ({ surveyData }) => {
     return () => {
       mapRef.current?.remove();
     };
-  }, [center]);
+  }, [center, circleLayer]);
 
   const getRandomColor = () => {
     const letters = '0123456789ABCDEF';

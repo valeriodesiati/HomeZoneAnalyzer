@@ -1,0 +1,57 @@
+axios.get('http://localhost:8083/g')
+.then((response) => {
+  response.data.forEach((item: { lat: number; lon: number; }) => {
+    const marker = L.marker([item.lat, item.lon]).addTo(mapRef.current!);
+    const point1 = turf.point([item.lon, item.lat]);
+    const point2 = turf.point([center[1], center[0]]);
+    const distance = turf.distance(point1, point2, { units: 'kilometers' });
+
+    marker.bindPopup(`Distanza dal centro: ${distance.toFixed(2)} km`).openPopup();
+
+    const randomColor = getRandomColor();
+    const line = turf.lineString([[center[1], center[0]], [item.lon, item.lat]]);
+    L.geoJSON(line, {
+      style: {
+        color: randomColor,
+        weight: 2
+      }
+    }).addTo(mapRef.current!);
+  });
+})
+.catch((error) => {
+  console.error('Error fetching data:', error);
+});
+
+axios.get('http://localhost:8083')
+.then((response) => {
+  response.data.forEach((item: { st_asgeojson: string }) => {
+    const geojson = JSON.parse(item.st_asgeojson);
+    L.geoJSON(geojson, {
+      style: {
+        color: getRandomColor(),
+        weight: 2
+      }
+    }).addTo(mapRef.current!);
+  });
+})
+.catch((error) => {
+  console.error('Errore durante il recupero dei dati delle geofence:', error);
+});
+
+
+//calcolo percorso basato su strade dati 2 punti
+    // L.Routing.control({
+    //   waypoints:[
+    //     L.latLng(marker1.getLatLng().lat,marker1.getLatLng().lng,),
+    //     L.latLng(marker2.getLatLng().lat,marker2.getLatLng().lng,)
+    //   ],
+    //   lineOptions: {
+    //     styles: [{ color: 'black', opacity: 1, weight: 3 }],
+    //     extendToWaypoints: true, // Estendi la linea fino ai punti di passaggio
+    //     missingRouteTolerance: 100 // Tolleranza per la ricerca di un percorso mancante in metri
+        
+    //   },
+    
+     
+
+    // }).addTo(mapRef.current)

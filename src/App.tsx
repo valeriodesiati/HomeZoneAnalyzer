@@ -11,7 +11,6 @@ const App: React.FC = () => {
 
   return (
     <div>
-      
       {surveyData ? (
         <Map surveyData={surveyData} />
       ) : (
