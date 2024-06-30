@@ -30,7 +30,9 @@ app.listen(8083, () => {
       console.log('server listening on port 8083')
 })
 
-app.post('',  (req, res) => {
+
+
+app.post('/shape/circle',  (req, res) => {
 	
 	var radius = req.body.r; // Assuming this is in meters
 	var lat = req.body.geojson.geometry.coordinates[1];
