@@ -16,8 +16,8 @@ const Map: React.FC<MapProps> = ({ surveyData }) => {
   const mapRef = useRef<L.Map | null>(null);
   const drawnItemsRef = useRef<L.FeatureGroup<any> | null>(null);
   const [center, _setCenter] = useState<[number, number]>([44.494887, 11.3426]);
-  const [circleLayer, setCircleLayer] = useState<L.Circle | null>(null); // State to keep track of the circle layer
-  const [polyLayer, setpolyLayer] = useState<L.Polygon | null>(null); // State to keep track of the polygon layer
+  const [circleLayer, _setCircleLayer] = useState<L.Circle | null>(null); // State to keep track of the circle layer
+  const [polyLayer, _setpolyLayer] = useState<L.Polygon | null>(null); // State to keep track of the polygon layer
   useEffect(() => {
     mapRef.current = L.map('map', {
       center,
@@ -32,16 +32,23 @@ const Map: React.FC<MapProps> = ({ surveyData }) => {
     drawnItemsRef.current = new L.FeatureGroup();
     mapRef.current.addLayer(drawnItemsRef.current);
 
-    const drawControl = new L.Control.Draw();
-    
+    let drawControl = new L.Control.Draw({
+      
+      edit: {
+        featureGroup: drawnItemsRef.current,
+      }
+      
+    });
+    drawControl.setDrawingOptions({polyline:false,circlemarker:false,rectangle:false})
     mapRef.current.addControl(drawControl);
-    mapRef.current.addControl(new L.Control.Layers())
+    
+    
 
     
     mapRef.current.on(L.Draw.Event.CREATED, async (event) => {
       const layer = event.layer;
       drawnItemsRef.current?.addLayer(layer);
-
+      
       if (layer instanceof L.Marker) {
         const { lat, lng } = layer.getLatLng();
         const point1 = turf.point([lng, lat]);
@@ -61,12 +68,14 @@ const Map: React.FC<MapProps> = ({ surveyData }) => {
       
 
       if(layer instanceof L.Polygon){
-        if (polyLayer) {
-          mapRef.current?.removeLayer(polyLayer);
-          drawnItemsRef.current?.removeLayer(polyLayer);
-        }
-
-        setpolyLayer(layer); // Update the state with the new circle layer
+        // if (polyLayer) {
+        //   mapRef.current?.removeLayer(polyLayer);
+        //   drawnItemsRef.current?.removeLayer(polyLayer);
+        // }
+        var color = getRandomColor()
+        layer.setStyle({color:color,fillColor:color,opacity:100,fillOpacity:0.5})
+        mapRef.current?.addLayer(layer)
+        // setpolyLayer(layer); // Update the state with the new circle layer
         
         axios.post('http://localhost:8083/shape/polygon', layer.toGeoJSON())
         .then(response => {
@@ -92,13 +101,17 @@ const Map: React.FC<MapProps> = ({ surveyData }) => {
 
       //check laery shape
       if (layer instanceof L.Circle) {
-        // Remove the existing circle layer if any
-        if (circleLayer) {
-          mapRef.current?.removeLayer(circleLayer);
-          drawnItemsRef.current?.removeLayer(circleLayer);
-        }
 
-        setCircleLayer(layer); // Update the state with the new circle layer
+        circleLayer?.setStyle({fillColor:getRandomColor(),color:'purple'})
+        // Remove the existing circle layer if any
+        // if (circleLayer) {
+        //   mapRef.current?.removeLayer(circleLayer);
+        //   drawnItemsRef.current?.removeLayer(circleLayer);
+        // }
+        var color = getRandomColor()
+        layer.setStyle({color:color,fillColor:color,opacity:100,fillOpacity:0.5})
+        mapRef.current?.addLayer(layer)
+        // setCircleLayer(layer); // Update the state with the new circle layer
 
         
         let r = layer.getRadius();
@@ -174,7 +187,7 @@ const Map: React.FC<MapProps> = ({ surveyData }) => {
     return () => {
       mapRef.current?.remove();
     };
-  }, [center, circleLayer]);
+  }, [center, circleLayer,polyLayer]);
 
   const getRandomColor = () => {
     const letters = '0123456789ABCDEF';
