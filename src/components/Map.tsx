@@ -17,7 +17,7 @@ const Map: React.FC<MapProps> = ({ surveyData }) => {
   const drawnItemsRef = useRef<L.FeatureGroup<any> | null>(null);
   const [center, _setCenter] = useState<[number, number]>([44.494887, 11.3426]);
   const [circleLayer, setCircleLayer] = useState<L.Circle | null>(null); // State to keep track of the circle layer
-
+  const [polyLayer, setpolyLayer] = useState<L.Polygon | null>(null); // State to keep track of the polygon layer
   useEffect(() => {
     mapRef.current = L.map('map', {
       center,
@@ -59,6 +59,38 @@ const Map: React.FC<MapProps> = ({ surveyData }) => {
         }).addTo(mapRef.current!);
       }
       
+
+      if(layer instanceof L.Polygon){
+        if (polyLayer) {
+          mapRef.current?.removeLayer(polyLayer);
+          drawnItemsRef.current?.removeLayer(polyLayer);
+        }
+
+        setpolyLayer(layer); // Update the state with the new circle layer
+        
+        axios.post('http://localhost:8083/shape/polygon', layer.toGeoJSON())
+        .then(response => {
+          response.data.forEach((item: { st_asgeojson: string }) => {
+            let geojson = JSON.parse(item.st_asgeojson);
+           
+            const markerIcon = L.icon({
+              iconUrl: `https://www.svgrepo.com/show/398258/school.svg`, // Example icon URL
+              iconSize: [25, 41],
+              iconAnchor: [12, 41],
+              popupAnchor: [1, -34],
+              shadowSize: [41, 41]
+            });
+            L.marker([geojson.coordinates[1], geojson.coordinates[0]], { icon: markerIcon }).addTo(mapRef.current!);
+          });
+        })
+        .catch(error => {
+          console.error('Error sending geometry to server:', error);
+        });
+      }
+      
+
+
+      //check laery shape
       if (layer instanceof L.Circle) {
         // Remove the existing circle layer if any
         if (circleLayer) {
@@ -68,6 +100,7 @@ const Map: React.FC<MapProps> = ({ surveyData }) => {
 
         setCircleLayer(layer); // Update the state with the new circle layer
 
+        
         let r = layer.getRadius();
         let geojson = layer.toGeoJSON();
         axios.post('http://localhost:8083/shape/circle', { r, geojson })
@@ -88,8 +121,10 @@ const Map: React.FC<MapProps> = ({ surveyData }) => {
           .catch(error => {
             console.error('Error sending geometry to server:', error);
           });
-      }
-    });
+        }
+      });
+
+
 
     fetch('https://raw.githubusercontent.com/simorina/bolognaGEO/main/file.geojson')
       .then((response) => response.json())

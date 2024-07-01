@@ -2,6 +2,7 @@ import express from 'express';
 const app = express();
 import cors from 'cors';
 import pg from 'pg'
+import { transpileDeclaration } from 'typescript';
 
 
 
@@ -58,6 +59,37 @@ app.post('/shape/circle',  (req, res) => {
         console.error('Errore durante il confronto delle geometrie:', err);
         res.status(500).json({ error: 'Errore durante il confronto delle geometrie' });
     }
+});
+
+
+app.post('/shape/polygon',  (req, res) => {
+    let geojson = req.body; // Supponendo che req.body sia una lista di coordinate [{lat: ..., lng: ...}, ...]
+    console.log(geojson);
+	let query= `
+      SELECT ST_AsGeoJSON(es.geometry::geometry)
+      FROM public."elenco-scuole" es
+      WHERE ST_WITHIN(
+        ST_SetSRID(ST_GeomFromGeoJSON('${JSON.stringify(geojson.geometry)}'), 4326),
+        es.geometry::geometry
+      );
+    `;
+	try {
+        client.query(query, (error, results) => {
+		if (error) {
+			console.error('Errore durante l\'esecuzione della query:', error);
+		} else {
+			console.log("query effettutata con successo");
+			console.log(results.rows);
+			res.send(results.rows)
+		}
+	  });
+	}
+	catch (err) {
+		console.error('Errore durante il confronto delle geometrie:', err);
+		res.status(500).json({ error: 'Errore durante il confronto delle geometrie' });
+	}
+    
+   
 });
 
 // app.get('/g', (req, res) => {
