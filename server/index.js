@@ -69,6 +69,161 @@ app.post('/shape/circle',  (req, res) => {
 });
 
 
+
+app.get('/schools', (req, res) => {
+      let query=`SELECT ST_AsGeoJSON(es.geometry::geometry)
+      			 FROM public."elenco-scuole" es`
+
+      client.query(query, (error, results) => {
+          if (error) {
+            console.error('Errore durante l\'esecuzione della query:', error);
+          } else {
+            console.log("query scuole effettutata con successo");
+            res.send(results.rows)
+          }
+        });
+})
+
+
+app.get('/sport', (req, res) => {
+	let query=`SELECT ST_AsGeoJSON(es.geometry::geometry)
+				 FROM public."impianti-sportivi" es`
+			   
+	client.query(query, (error, results) => {
+		if (error) {
+		  console.error('Errore durante l\'esecuzione della query:', error);
+		} else {
+		  console.log("query impianti sportivi effettutata con successo");
+		  res.send(results.rows)
+		}
+	  });
+})
+
+
+app.get('/pharmacy', (req, res) => {
+	let query=`SELECT ST_AsGeoJSON(es.geometry::geometry)
+				 FROM public."farmacie" es`
+
+	client.query(query, (error, results) => {
+		if (error) {
+		  console.error('Errore durante l\'esecuzione della query:', error);
+		} else {
+		  console.log("query scuole effettutata con successo");
+		  res.send(results.rows)
+		}
+	  });
+})
+
+
+app.get('/bycicles', (req, res) => {
+  let query=`SELECT ST_AsGeoJSON(es.geometry::geometry)
+			   FROM public."rastrelliere-biciclette" es`
+			 
+  client.query(query, (error, results) => {
+	  if (error) {
+		console.error('Errore durante l\'esecuzione della query:', error);
+	  } else {
+		console.log("query impianti sportivi effettutata con successo");
+		res.send(results.rows)
+	  }
+	});
+})
+
+
+
+app.get('/hospital', (req, res) => {
+	let query=`SELECT ST_AsGeoJSON(es.geometry::geometry)
+				 FROM public."strutture-sanitarie" es`
+
+	client.query(query, (error, results) => {
+		if (error) {
+		  console.error('Errore durante l\'esecuzione della query:', error);
+		} else {
+		  console.log("query scuole effettutata con successo");
+		  res.send(results.rows)
+		}
+	  });
+})
+
+
+app.get('/library', (req, res) => {
+  let query=`SELECT ST_AsGeoJSON(es.geometry::geometry)
+			   FROM public."biblioteche-bologna" es`
+			 
+  client.query(query, (error, results) => {
+	  if (error) {
+		console.error('Errore durante l\'esecuzione della query:', error);
+	  } else {
+		console.log("query impianti sportivi effettutata con successo");
+		res.send(results.rows)
+	  }
+	});
+})
+
+app.get('/electric', (req, res) => {
+	let query=`SELECT ST_AsGeoJSON(es.geometry::geometry)
+				 FROM public."colonnine-elettriche" es`
+			   
+	client.query(query, (error, results) => {
+		if (error) {
+		  console.error('Errore durante l\'esecuzione della query:', error);
+		} else {
+		  console.log("query impianti sportivi effettutata con successo");
+		  res.send(results.rows)
+		}
+	  });
+  })
+
+  
+  app.get('/cinemaTeathers', (req, res) => {
+	let query=`SELECT ST_AsGeoJSON(es.geometry::geometry)
+				 FROM public."teatri-cinema" es`
+			   
+	client.query(query, (error, results) => {
+		if (error) {
+		  console.error('Errore durante l\'esecuzione della query:', error);
+		} else {
+		  console.log("query impianti sportivi effettutata con successo");
+		  res.send(results.rows)
+		}
+	  });
+  })
+
+  
+  app.get('/ludic', (req, res) => {
+	let query=`SELECT ST_AsGeoJSON(es.geometry::geometry)
+				 FROM public."attrezzature-ludiche" es`
+			   
+	client.query(query, (error, results) => {
+		if (error) {
+		  console.error('Errore durante l\'esecuzione della query:', error);
+		} else {
+		  console.log("query impianti sportivi effettutata con successo");
+		  res.send(results.rows)
+		}
+	  });
+  })
+
+  app.get('/bus', (req, res) => {
+	let query=`SELECT ST_AsGeoJSON(es.geometry::geometry)
+				 FROM public."tper-fermate-bus" es`
+			   
+	client.query(query, (error, results) => {
+		if (error) {
+		  console.error('Errore durante l\'esecuzione della query:', error);
+		} else {
+		  console.log("query impianti sportivi effettutata con successo");
+		  res.send(results.rows)
+		}
+	  });
+  })
+  
+  
+
+
+
+
+
 //post request for the send polygon area 
 app.post('/shape/polygon',  (req, res) => {
     let geojson = req.body; // Supponendo che req.body sia una lista di coordinate [{lat: ..., lng: ...}, ...]

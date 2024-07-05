@@ -4,8 +4,6 @@ import 'leaflet-draw';
 import 'leaflet-routing-machine';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-draw/dist/leaflet.draw.css';
-
-import * as turf from '@turf/turf';
 import axios from 'axios';
 
 interface MapProps {
@@ -13,199 +11,136 @@ interface MapProps {
 }
 
 const Map: React.FC<MapProps> = ({ surveyData }) => {
-  const mapRef = useRef<L.Map | null>(null);
-  const drawnItemsRef = useRef<L.FeatureGroup<any> | null>(null);
+  let mapRef = useRef<L.Map | null>(null);
+  let drawnItemsRef = useRef<L.FeatureGroup<any> | null>(null);
   const [center, _setCenter] = useState<[number, number]>([44.494887, 11.3426]);
-  const [circleLayer, _setCircleLayer] = useState<L.Circle | null>(null); // State to keep track of the circle layer
-  const [polyLayer, _setpolyLayer] = useState<L.Polygon | null>(null); // State to keep track of the polygon layer
+  const [circleLayer, _setCircleLayer] = useState<L.Circle | null>(null);
+  const [polyLayer, _setPolyLayer] = useState<L.Polygon | null>(null);
+  
+
+  // Use LayerGroup instead of FeatureGroup
+  const layerGroups: { [key: string]: L.LayerGroup } = {
+    scuole: L.layerGroup(),
+    colonnine_Elettriche: L.layerGroup(),
+    farmacie: L.layerGroup(),
+    biblioteche: L.layerGroup(),
+    teatri_Cinema: L.layerGroup(),
+    ospedali: L.layerGroup(),
+    biciclette: L.layerGroup(),
+    sport: L.layerGroup(),
+    ludico: L.layerGroup(),
+    fermate_Bus: L.layerGroup()
+  };
+
   useEffect(() => {
     mapRef.current = L.map('map', {
       center,
       zoom: 13,
       layers: [
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-          attribution: '&copy; OpenStreetMap contributors'
-        })
-      ]
+          attribution: '&copy; OpenStreetMap contributors',
+        }),
+      ],
     });
 
     drawnItemsRef.current = new L.FeatureGroup();
     mapRef.current.addLayer(drawnItemsRef.current);
 
     let drawControl = new L.Control.Draw({
-      
       edit: {
         featureGroup: drawnItemsRef.current,
-      }
-      
+      },
     });
-    drawControl.setDrawingOptions({polyline:false,circlemarker:false,rectangle:false})
+    drawControl.setDrawingOptions({
+      polyline: false,
+      circlemarker: false,
+      rectangle: false,
+    });
     mapRef.current.addControl(drawControl);
     
     
-
+    loadFeatureGroupData('scuole', 'http://localhost:8083/schools','https://www.svgrepo.com/show/398258/school.svg');
+    loadFeatureGroupData('sport', 'http://localhost:8083/sport','https://www.svgrepo.com/show/475554/gym.svg');
+    loadFeatureGroupData('farmacie', 'http://localhost:8083/pharmacy','https://www.svgrepo.com/show/475523/pharmacy.svg');
+    loadFeatureGroupData('biblioteche', 'http://localhost:8083/library','https://www.svgrepo.com/show/395907/books.svg');
+    loadFeatureGroupData('ospedali', 'http://localhost:8083/hospital','https://www.svgrepo.com/show/500071/hospital.svg');
+    loadFeatureGroupData('biciclette', 'http://localhost:8083/bycicles','https://www.svgrepo.com/show/105391/bycicle.svg');
+    loadFeatureGroupData('teatri_Cinema', 'http://localhost:8083/cinemaTeathers','https://www.svgrepo.com/show/418375/cinema-dessert-fastfood.svg');
+    loadFeatureGroupData('ludico', 'http://localhost:8083/ludic','https://www.svgrepo.com/show/475275/star.svg');
+    loadFeatureGroupData('colonnine_Elettriche', 'http://localhost:8083/electric','https://www.svgrepo.com/show/396360/electric-plug.svg');
+    loadFeatureGroupData('fermate_Bus', 'http://localhost:8083/bus','https://www.svgrepo.com/show/500067/bus-stop.svg');
     
-    mapRef.current.on(L.Draw.Event.CREATED, async (event) => {
-      const layer = event.layer;
-      drawnItemsRef.current?.addLayer(layer);
-      
-      if (layer instanceof L.Marker) {
-        const { lat, lng } = layer.getLatLng();
-        const point1 = turf.point([lng, lat]);
-        const point2 = turf.point([center[1], center[0]]);
-        const distance = turf.distance(point1, point2, { units: 'kilometers' });
-        layer.bindPopup(`Distanza dal centro: ${distance.toFixed(2)} km`).openPopup();
 
-        const randomColor = getRandomColor();
-        const line = turf.lineString([[center[1], center[0]], [lng, lat]]);
-        L.geoJSON(line, {
-          style: {
-            color: randomColor,
-            weight: 2
-          }
-        }).addTo(mapRef.current!);
-      }
-      
+    var osm = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '© OpenStreetMap'
+    });
+  
+    var osmHOT = L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '© OpenStreetMap contributors, Tiles style by Humanitarian OpenStreetMap Team hosted by OpenStreetMap France'});
+  
 
-      if(layer instanceof L.Polygon){
-        // if (polyLayer) {
-        //   mapRef.current?.removeLayer(polyLayer);
-        //   drawnItemsRef.current?.removeLayer(polyLayer);
-        // }
-        var color = getRandomColor()
-        layer.setStyle({color:color,fillColor:color,opacity:100,fillOpacity:0.5})
-        mapRef.current?.addLayer(layer)
-        // setpolyLayer(layer); // Update the state with the new circle layer
-        
-        axios.post('http://localhost:8083/shape/polygon', layer.toGeoJSON())
-        .then(response => {
-          response.data.forEach((item: { st_asgeojson: string }) => {
-            let geojson = JSON.parse(item.st_asgeojson);
-           
-            const markerIcon = L.icon({
-              iconUrl: `https://www.svgrepo.com/show/398258/school.svg`, // Example icon URL
-              iconSize: [25, 41],
-              iconAnchor: [12, 41],
-              popupAnchor: [1, -34],
-              shadowSize: [41, 41]
-            });
-            L.marker([geojson.coordinates[1], geojson.coordinates[0]], { icon: markerIcon }).addTo(mapRef.current!);
-          });
-        })
-        .catch(error => {
-          console.error('Error sending geometry to server:', error);
-        });
-      }
-      
+    var baseMaps = {
+        "OpenStreetMap": osm,
+        "OpenStreetMap.HOT": osmHOT
+    };
 
+    L.control.layers(baseMaps, layerGroups).addTo(mapRef.current!);
 
-      //check laery shape
-      if (layer instanceof L.Circle) {
-
-        circleLayer?.setStyle({fillColor:getRandomColor(),color:'purple'})
-        // Remove the existing circle layer if any
-        // if (circleLayer) {
-        //   mapRef.current?.removeLayer(circleLayer);
-        //   drawnItemsRef.current?.removeLayer(circleLayer);
-        // }
-        var color = getRandomColor()
-        layer.setStyle({color:color,fillColor:color,opacity:100,fillOpacity:0.5})
-        mapRef.current?.addLayer(layer)
-        // setCircleLayer(layer); // Update the state with the new circle layer
-
-        
-        let r = layer.getRadius();
-        let geojson = layer.toGeoJSON();
-        axios.post('http://localhost:8083/shape/circle', { r, geojson })
-          .then(response => {
-            response.data.forEach((item: { st_asgeojson: string }) => {
-              let geojson = JSON.parse(item.st_asgeojson);
-             
-              const markerIcon = L.icon({
-                iconUrl: `https://www.svgrepo.com/show/398258/school.svg`, // Example icon URL
-                iconSize: [25, 41],
-                iconAnchor: [12, 41],
-                popupAnchor: [1, -34],
-                shadowSize: [41, 41]
-              });
-              L.marker([geojson.coordinates[1], geojson.coordinates[0]], { icon: markerIcon }).addTo(mapRef.current!);
-            });
-          })
-          .catch(error => {
-            console.error('Error sending geometry to server:', error);
-          });
-        }
-      });
-
-
-
-    fetch('https://raw.githubusercontent.com/simorina/bolognaGEO/main/file.geojson')
-      .then((response) => response.json())
-      .then((data) => {
-        L.geoJSON(data, {
-          style: (feature) => {
-            const fillColor = feature?.properties?.fill || 'red';
-            const color = feature?.properties?.color || 'black';
-            return {
-              fillColor,
-              color,
-              weight: 2,
-              fillOpacity: 0.5
-            };
-          }
-        }).addTo(mapRef.current!);
-      });
-
-  const marker1 = L.marker(center).addTo(mapRef.current!);
-  const marker2 = L.marker([44.500456, 11.346367]).addTo(mapRef.current!);
-  const point1 = turf.point([marker1.getLatLng().lng, marker1.getLatLng().lat]);
-  const point2 = turf.point([marker2.getLatLng().lng, marker2.getLatLng().lat]);
-  const distance = turf.distance(point1, point2, { units: 'kilometers' });
-
-  //  //calcolo percorso basato su strade dati 2 punti
-  //   L.Routing.control({
-  //     waypoints:[
-  //       L.latLng(marker1.getLatLng().lat,marker1.getLatLng().lng,),
-  //       L.latLng(marker2.getLatLng().lat,marker2.getLatLng().lng,)
-  //     ],
-  //     lineOptions: {
-  //       styles: [{ color: 'black', opacity: 1, weight: 3 }],
-  //       extendToWaypoints: true, // Estendi la linea fino ai punti di passaggio
-  //       missingRouteTolerance: 100 // Tolleranza per la ricerca di un percorso mancante in metri
-        
-  //     },
-  //   }).addTo(mapRef.current)
-    marker2.bindPopup(`Distanza da punto 1: ${distance.toFixed(2)} km`);
-    const line = turf.lineString([[marker1.getLatLng().lng, marker1.getLatLng().lat], [marker2.getLatLng().lng, marker2.getLatLng().lat]]);
-    L.geoJSON(line, {
-      style: {
-        color: 'red',
-        weight: 2
-      }
-    }).addTo(mapRef.current!);
+   
+    
+    
 
     return () => {
       mapRef.current?.remove();
     };
-  }, [center, circleLayer,polyLayer]);
+  }, [center, circleLayer, polyLayer]);
 
-  const getRandomColor = () => {
-    const letters = '0123456789ABCDEF';
-    let color = '#';
-    for (let i = 0; i < 6; i++) {
-      color += letters[Math.floor(Math.random() * 16)];
-    }
-    return color;
+  let loadFeatureGroupData = (key: string, url: string,urlMarkericon:string) => {
+    L.control.layers().addOverlay(layerGroups[key],key)
+    axios.get(url)
+      .then((response) => {
+        response.data.forEach((item: { st_asgeojson: string }) => {
+          const geojson = JSON.parse(item.st_asgeojson);
+          const markerIcon = L.icon({
+            // iconUrl: `https://www.svgrepo.com/show/398258/school.svg`,
+            iconUrl: urlMarkericon,
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+            popupAnchor: [1, -34],
+            shadowSize: [41, 41],
+          });
+          L.marker([geojson.coordinates[1], geojson.coordinates[0]], { icon: markerIcon }).addTo(layerGroups[key])
+          
+        });
+       
+      })
+      .catch((error) => {
+        console.error(`Errore durante il recupero dei dati delle ${key}:`, error);
+      });
   };
 
+  // const getRandomColor = () => {
+  //   const letters = '0123456789ABCDEF';
+  //   let color = '#';
+  //   for (let i = 0; i < 6; i++) {
+  //     color += letters[Math.floor(Math.random() * 16)];
+  //   }
+  //   return color;
+  // };
+
+
   return (
-    <div>
-      <div id="map" style={{ height: '500px', width: '100vh' }} />
-      <div>
+    <div style={{ display: 'flex' }}>
+      <div id="map" style={{ height: '100vw', width: '70vw' }} />
+      <div style={{ marginLeft: '20px' }}>
         <h3>Survey Data</h3>
         <ul>
           {surveyData.map((response, index) => (
-            <li key={index}>Question {index + 1}: {response}</li>
+            <li key={index}>
+              Question {index + 1}: {response}
+            </li>
           ))}
         </ul>
       </div>
