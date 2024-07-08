@@ -35,44 +35,62 @@ app.listen(8083, () => {
 })
 
 
-//post request to manage circle drawing area
-app.post('/shape/circle',  (req, res) => {
-	//get radius
-	var radius = req.body.r; // Assuming this is in meters
-	//get latitude
-	var lat = req.body.geojson.geometry.coordinates[1];
-	// get longitude
-	var lon = req.body.geojson.geometry.coordinates[0];
+// //post request to manage circle drawing area
+// app.post('/shape/circle',  (req, res) => {
+// 	//get radius
+// 	var radius = req.body.r; // Assuming this is in meters
+// 	//get latitude
+// 	var lat = req.body.geojson.geometry.coordinates[1];
+// 	// get longitude
+// 	var lon = req.body.geojson.geometry.coordinates[0];
 
-	//query to get schools coords that are inside circle area
-	let query = `WITH circle_geom AS (
-	SELECT ST_Buffer(ST_SetSRID(ST_MakePoint(${lon}, ${lat}), 4326)::geography, ${radius})::geometry AS geom
-	)
-	SELECT ST_AsGeoJSON(es.geometry::geometry)
-	FROM circle_geom AS cg, public."elenco-scuole" AS es 
-	WHERE ST_Contains(cg.geom, es.geometry::geometry)`;
+// 	//query to get schools coords that are inside circle area
+// 	let query = `WITH circle_geom AS (
+// 	SELECT ST_Buffer(ST_SetSRID(ST_MakePoint(${lon}, ${lat}), 4326)::geography, ${radius})::geometry AS geom
+// 	)
+// 	SELECT ST_AsGeoJSON(es.geometry::geometry)
+// 	FROM circle_geom AS cg, public."elenco-scuole" AS es 
+// 	WHERE ST_Contains(cg.geom, es.geometry::geometry)`;
 
-	//try query execution
-    try {
-        client.query(query, (error, results) => {
-      if (error) {
-        console.error('Errore durante l\'esecuzione della query:', error);
-      } else {
-        console.log("query effettutata con successo");
-        res.send(results.rows)
-      }
-    });
-    } catch (err) {
-        console.error('Errore durante il confronto delle geometrie:', err);
-        res.status(500).json({ error: 'Errore durante il confronto delle geometrie' });
-    }
-});
+// 	//try query execution
+//     try {
+//         client.query(query, (error, results) => {
+//       if (error) {
+//         console.error('Errore durante l\'esecuzione della query:', error);
+//       } else {
+//         console.log("query effettutata con successo");
+//         res.send(results.rows)
+//       }
+//     });
+//     } catch (err) {
+//         console.error('Errore durante il confronto delle geometrie:', err);
+//         res.status(500).json({ error: 'Errore durante il confronto delle geometrie' });
+//     }
+// });
 
+
+
+
+app.post('/',(req,res)=>{
+
+	client.query(`truncate table user_votes`);
+
+	for (let i = 0; i < req.body.values.length; i++) {
+		
+		client.query(`INSERT INTO user_votes (poi_type, vote) VALUES ('${req.body.keys[i]}', '${req.body.values[i]}');`);
+		
+		console.log(req.body.keys.length + ' ' + req.body.values[i])
+		
+	}
+
+	res.send('INSERIMENTO VOTI ANDATO')
+	
+})
 
 
 app.get('/schools', (req, res) => {
-      let query=`SELECT ST_AsGeoJSON(es.geometry::geometry)
-      			 FROM public."elenco-scuole" es`
+      let query=`SELECT ST_AsGeoJSON(es.geometry::geometry),es.quartiere,es.nome
+      			 FROM schools es;`
 
       client.query(query, (error, results) => {
           if (error) {
@@ -87,7 +105,7 @@ app.get('/schools', (req, res) => {
 
 app.get('/sport', (req, res) => {
 	let query=`SELECT ST_AsGeoJSON(es.geometry::geometry)
-				 FROM public."impianti-sportivi" es`
+				 FROM sports_areas es;`
 			   
 	client.query(query, (error, results) => {
 		if (error) {
@@ -102,7 +120,7 @@ app.get('/sport', (req, res) => {
 
 app.get('/pharmacy', (req, res) => {
 	let query=`SELECT ST_AsGeoJSON(es.geometry::geometry)
-				 FROM public."farmacie" es`
+				 FROM pharmacies es;`
 
 	client.query(query, (error, results) => {
 		if (error) {
@@ -117,7 +135,7 @@ app.get('/pharmacy', (req, res) => {
 
 app.get('/bycicles', (req, res) => {
   let query=`SELECT ST_AsGeoJSON(es.geometry::geometry)
-			   FROM public."rastrelliere-biciclette" es`
+			   FROM bike_racks es;`
 			 
   client.query(query, (error, results) => {
 	  if (error) {
@@ -129,11 +147,23 @@ app.get('/bycicles', (req, res) => {
 	});
 })
 
+app.get('/green_areas', (req, res) => {
+	let query=`SELECT ST_AsGeoJSON(es.geometry::geometry)
+				 FROM green_areas es;`
 
+	client.query(query, (error, results) => {
+		if (error) {
+		  console.error('Errore durante l\'esecuzione della query:', error);
+		} else {
+		  console.log("query aree verdi effettutata con successo");
+		  res.send(results.rows)
+		}
+	  });
+})
 
 app.get('/hospital', (req, res) => {
 	let query=`SELECT ST_AsGeoJSON(es.geometry::geometry)
-				 FROM public."strutture-sanitarie" es`
+				 FROM hospitals es;`
 
 	client.query(query, (error, results) => {
 		if (error) {
@@ -148,7 +178,7 @@ app.get('/hospital', (req, res) => {
 
 app.get('/library', (req, res) => {
   let query=`SELECT ST_AsGeoJSON(es.geometry::geometry)
-			   FROM public."biblioteche-bologna" es`
+			   FROM libraries es;`
 			 
   client.query(query, (error, results) => {
 	  if (error) {
@@ -162,7 +192,7 @@ app.get('/library', (req, res) => {
 
 app.get('/electric', (req, res) => {
 	let query=`SELECT ST_AsGeoJSON(es.geometry::geometry)
-				 FROM public."colonnine-elettriche" es`
+				 FROM electric_stations es;`
 			   
 	client.query(query, (error, results) => {
 		if (error) {
@@ -177,7 +207,7 @@ app.get('/electric', (req, res) => {
   
   app.get('/cinemaTeathers', (req, res) => {
 	let query=`SELECT ST_AsGeoJSON(es.geometry::geometry)
-				 FROM public."teatri-cinema" es`
+				 FROM theaters es;`
 			   
 	client.query(query, (error, results) => {
 		if (error) {
@@ -192,7 +222,7 @@ app.get('/electric', (req, res) => {
   
   app.get('/ludic', (req, res) => {
 	let query=`SELECT ST_AsGeoJSON(es.geometry::geometry)
-				 FROM public."attrezzature-ludiche" es`
+				 FROM ludics es;`
 			   
 	client.query(query, (error, results) => {
 		if (error) {
@@ -206,7 +236,7 @@ app.get('/electric', (req, res) => {
 
   app.get('/bus', (req, res) => {
 	let query=`SELECT ST_AsGeoJSON(es.geometry::geometry)
-				 FROM public."tper-fermate-bus" es`
+				 FROM bus_stops es`
 			   
 	client.query(query, (error, results) => {
 		if (error) {

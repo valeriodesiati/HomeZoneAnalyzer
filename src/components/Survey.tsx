@@ -2,29 +2,29 @@ import React, { useState } from 'react';
 import '../css/Survey.css';
 
 interface SurveyProps {
-  onSubmit: (responses: number[]) => void;
+  onSubmit: (responses: Map<string, number>) => void;
 }
 
 const questions = [
-  'Quanto è importante la presenza di aree verdi nel vicinato?',
-  'Quant\'è importante che ci siano almeno 2 fermate del bus vicino a te?',
-  'Quant\'è importante la presenza di aree sportive pubbliche vicino a te?',
-  'Quant\'è importante la presenza di rastrelliere di biciclette vicino a te?',
-  'Quant\'è importante la presenza di parcheggi per veicoli elettrici?',
-  'Quant\'è importante la presenza di almeno 1 struttura sanitaria privata vicino a te?',
-  'Quant\'è importante la presenza di stutture sanitarie pubbliche vicino a te?',
-  'Quant\'è importante la presenza di scuole vicino a te?',
-  'Quant\'è importante la presenza di biblioteche vicino a te?',
-  'Quant\'è importante la presenza di più di un teatro vicino a te?',
-  'Quant\'è importante la presenza di farmacie vicino a te?'
+  { text: 'Quanto è importante la presenza di aree verdi nel vicinato?', poi: 'greenAreas' },
+  { text: 'Quant\'è importante che ci siano almeno 2 fermate del bus vicino a te?', poi: 'busStops' },
+  { text: 'Quant\'è importante la presenza di aree sportive pubbliche vicino a te?', poi: 'sportsAreas' },
+  { text: 'Quant\'è importante la presenza di rastrelliere di biciclette vicino a te?', poi: 'bikeRacks' },
+  { text: 'Quant\'è importante la presenza di parcheggi per veicoli elettrici?', poi: 'electricStations' },
+  { text: 'Quant\'è importante la presenza di almeno 1 struttura sanitaria privata vicino a te?', poi: 'hospitals' },
+  { text: 'Quant\'è importante la presenza di scuole vicino a te?', poi: 'schools' },
+  { text: 'Quant\'è importante la presenza di biblioteche vicino a te?', poi: 'libraries' },
+  { text: 'Quant\'è importante la presenza di più di un teatro vicino a te?', poi: 'theaters' },
+  { text: 'Quant\'è importante la presenza di farmacie vicino a te?', poi: 'pharmacies' }
 ];
 
 const Survey: React.FC<SurveyProps> = ({ onSubmit }) => {
-  const [responses, setResponses] = useState<number[]>(new Array(questions.length).fill(0));
+  const initialResponses = new Map(questions.map(question => [question.poi, 0]));
+  const [responses, setResponses] = useState<Map<string, number>>(initialResponses);
 
-  const handleChange = (index: number, value: number) => {
-    const newResponses = [...responses];
-    newResponses[index] = value;
+  const handleChange = (poi: string, value: number) => {
+    const newResponses = new Map(responses);
+    newResponses.set(poi, value);
     setResponses(newResponses);
   };
 
@@ -37,7 +37,7 @@ const Survey: React.FC<SurveyProps> = ({ onSubmit }) => {
       <h2 className='title'>Home Zone Analyzer</h2>
       {questions.map((question, index) => (
         <div key={index} className="question">
-          <p className='questionText'>{question}</p>
+          <p className='questionText'>{question.text}</p>
           <div className="surveyOptions">
             {[0, 1, 2, 3, 4, 5].map((value) => (
               <React.Fragment key={value}>
@@ -47,8 +47,8 @@ const Survey: React.FC<SurveyProps> = ({ onSubmit }) => {
                   name={`question-${index}`}
                   value={value}
                   id={`question-${index}-value-${value}`}
-                  checked={responses[index] === value}
-                  onChange={() => handleChange(index, value)}
+                  checked={responses.get(question.poi) === value}
+                  onChange={() => handleChange(question.poi, value)}
                 />
                 <label htmlFor={`question-${index}-value-${value}`}>{value}</label>
               </React.Fragment>
