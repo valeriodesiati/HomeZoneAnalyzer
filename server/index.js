@@ -126,7 +126,7 @@ app.get('/pharmacy', (req, res) => {
 		if (error) {
 		  console.error('Errore durante l\'esecuzione della query:', error);
 		} else {
-		  console.log("query scuole effettutata con successo");
+		  console.log("query farmacie effettutata");
 		  res.send(results.rows)
 		}
 	  });
@@ -141,7 +141,7 @@ app.get('/bycicles', (req, res) => {
 	  if (error) {
 		console.error('Errore durante l\'esecuzione della query:', error);
 	  } else {
-		console.log("query impianti sportivi effettutata con successo");
+		console.log("query rastrelliere biciclette effettutata");
 		res.send(results.rows)
 	  }
 	});
@@ -169,7 +169,7 @@ app.get('/hospital', (req, res) => {
 		if (error) {
 		  console.error('Errore durante l\'esecuzione della query:', error);
 		} else {
-		  console.log("query scuole effettutata con successo");
+		  console.log("query ospedali effettuata");
 		  res.send(results.rows)
 		}
 	  });
@@ -184,7 +184,7 @@ app.get('/library', (req, res) => {
 	  if (error) {
 		console.error('Errore durante l\'esecuzione della query:', error);
 	  } else {
-		console.log("query impianti sportivi effettutata con successo");
+		console.log("query librerie effettutata");
 		res.send(results.rows)
 	  }
 	});
@@ -198,7 +198,7 @@ app.get('/electric', (req, res) => {
 		if (error) {
 		  console.error('Errore durante l\'esecuzione della query:', error);
 		} else {
-		  console.log("query impianti sportivi effettutata con successo");
+		  console.log("query colonnine elettriche effettuata");
 		  res.send(results.rows)
 		}
 	  });
@@ -213,7 +213,7 @@ app.get('/electric', (req, res) => {
 		if (error) {
 		  console.error('Errore durante l\'esecuzione della query:', error);
 		} else {
-		  console.log("query impianti sportivi effettutata con successo");
+		  console.log("query cinema e teatri");
 		  res.send(results.rows)
 		}
 	  });
@@ -228,7 +228,7 @@ app.get('/electric', (req, res) => {
 		if (error) {
 		  console.error('Errore durante l\'esecuzione della query:', error);
 		} else {
-		  console.log("query impianti sportivi effettutata con successo");
+		  console.log("query impianti luidici effettutata");
 		  res.send(results.rows)
 		}
 	  });
@@ -242,7 +242,7 @@ app.get('/electric', (req, res) => {
 		if (error) {
 		  console.error('Errore durante l\'esecuzione della query:', error);
 		} else {
-		  console.log("query impianti sportivi effettutata con successo");
+		  console.log("query bus effettuata");
 		  res.send(results.rows)
 		}
 	  });
@@ -250,7 +250,18 @@ app.get('/electric', (req, res) => {
   
   
 
-
+app.get('/quartieri',(req,res) =>{
+	let query=`SELECT ST_AsGeoJSON(n.geometry),n.quartiere from neighborhoods n`
+			   
+	client.query(query, (error, results) => {
+		if (error) {
+		  console.error('Errore durante l\'esecuzione della query:', error);
+		} else {
+		  console.log("query quartieri effettuata");
+		  res.send(results.rows)
+		}
+	  });
+})
 
 
 

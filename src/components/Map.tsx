@@ -100,6 +100,13 @@ const Map: React.FC<MapProps> = ({ surveyData }) => {
     
   };
 
+
+
+
+
+
+
+
   const surveyKeys = Array.from(surveyData.keys());
   const surveyValues = Array.from(surveyData.values());
 
@@ -126,6 +133,7 @@ const Map: React.FC<MapProps> = ({ surveyData }) => {
           //parsing di ogni item della risposta in formato geojson
           let geojson = JSON.parse(item.st_asgeojson);
         
+          //creazione marker con icona  appropriata
           const markerIcon = L.icon({
             iconUrl: urlMarkericon,
             iconSize: [25, 41],
@@ -138,12 +146,6 @@ const Map: React.FC<MapProps> = ({ surveyData }) => {
           L.marker([geojson.coordinates[1], geojson.coordinates[0]], { icon: markerIcon }).addTo(layerGroups[key]);
 
           
-          
-           
-             
-          
-          
-          //creazione icon per il marker
         });
 
       })
@@ -151,8 +153,43 @@ const Map: React.FC<MapProps> = ({ surveyData }) => {
       .catch((error) => {
         console.error(`Errore durante il recupero dei dati delle ${key}:`, error);
       });
+
+
+    // Funzione per generare un colore casuale in formato esadecimale
+  const getRandomColor = () => {
+    const letters = '0123456789ABCDEF';
+    let color = '#';
+    for (let i = 0; i < 6; i++) {
+      color += letters[Math.floor(Math.random() * 16)];
+    }
+    return color;
+  };
+    
+
+
+    axios.get('http://localhost:8083/quartieri')
+      .then((response) => {
+        response.data.forEach((item: { st_asgeojson: string, quartiere:string }) => {
+          const quartiereLayer = L.geoJSON(JSON.parse(item.st_asgeojson), {
+            style: {
+              fillColor: getRandomColor(), // Genera un colore casuale
+              fillOpacity: 0.1,
+              color: '#000',
+              weight: 0.5,
+            },
+          }).addTo(drawnItemsRef.current!);
+
+          quartiereLayer.bindPopup(item.quartiere);
+        });
+        
+        
+      })
+      .catch((error) => {
+        console.error('Errore durante il recupero dei dati delle geofence:', error);
+      });
   };
 
+  //return del componente mappa con risposte del sondaggio fatto in precedenza
   return (
     <div style={{ display: 'flex' }}>
       <div id="map" style={{ height: '100vw', width: '70vw' }} />
