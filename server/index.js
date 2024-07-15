@@ -2,7 +2,7 @@ import express from 'express';
 const app = express();
 import cors from 'cors';
 import pg from 'pg'
-
+import {GET_APARTMENTS_QUERY} from '../src/assets/queryRanking.js'
 
 
 //allow CORS-policy
@@ -79,12 +79,27 @@ app.post('/',(req,res)=>{
 		
 		client.query(`INSERT INTO user_votes (poi_type, vote) VALUES ('${req.body.keys[i]}', '${req.body.values[i]}');`);
 		
-		console.log(req.body.keys.length + ' ' + req.body.values[i])
+		
 		
 	}
 
 	res.send('INSERIMENTO VOTI ANDATO')
 	
+})
+
+
+app.get('/apartments',(req,res)=>{
+
+	client.query(GET_APARTMENTS_QUERY,(error,results)=>{
+		if (error) {
+            console.error('Errore durante l\'esecuzione della query:', error);
+          } else {
+            console.log("query appartamenti effettutata con successo");
+            res.send(results.rows)
+          }
+	});
+
+
 })
 
 
@@ -116,6 +131,8 @@ app.get('/sport', (req, res) => {
 		}
 	  });
 })
+
+
 
 
 app.get('/pharmacy', (req, res) => {

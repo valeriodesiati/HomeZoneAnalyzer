@@ -1,4 +1,5 @@
-WITH poi_distances AS (
+export const GET_APARTMENTS_QUERY = 
+` WITH poi_distances AS (
     SELECT a.id AS apartment_id,
         'school' AS poi_type,
         MIN(ST_Distance(a.geometry, p.geometry)) AS distance
@@ -105,7 +106,9 @@ apartment_scores AS (
 )
 SELECT
     a.id AS apartment_id,
-    ascore.total_weighted_distance
+	ST_AsGeoJSON(a.geometry::geometry) as geometry,
+	a.prezzo,
+    ascore.total_weighted_distance as score
 FROM apartments a
 JOIN apartment_scores ascore ON a.id = ascore.apartment_id
-ORDER BY ascore.total_weighted_distance ASC;
+ORDER BY ascore.total_weighted_distance ASC;`

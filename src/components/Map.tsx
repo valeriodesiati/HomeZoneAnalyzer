@@ -2,6 +2,9 @@ import React, { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet-draw';
 import 'leaflet-routing-machine';
+import * as d3Scale from 'd3-scale';
+import * as d3Interpolate from 'd3-interpolate'  ; // Import interpolateRgbBasis for more sensitive color interpolation
+
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-draw/dist/leaflet.draw.css';
 import axios from 'axios';
@@ -82,10 +85,8 @@ const Map: React.FC<MapProps> = ({ surveyData }) => {
     };
   }, [center, circleLayer, polyLayer]);
 
-  //caricamento dei PoI sulla mappa
+  // Load Points of Interest (PoI) on the map
   let loadPoI = () => {
-    
-     
     loadFeatureGroupData('aree_verdi', 'http://localhost:8083/green_areas', 'https://www.svgrepo.com/show/500085/tree.svg');
     loadFeatureGroupData('scuole', 'http://localhost:8083/schools', 'https://www.svgrepo.com/show/398258/school.svg');
     loadFeatureGroupData('sport', 'http://localhost:8083/sport', 'https://www.svgrepo.com/show/475554/gym.svg');
@@ -97,43 +98,22 @@ const Map: React.FC<MapProps> = ({ surveyData }) => {
     loadFeatureGroupData('ludico', 'http://localhost:8083/ludic', 'https://www.svgrepo.com/show/475275/star.svg');
     loadFeatureGroupData('colonnine_Elettriche', 'http://localhost:8083/electric', 'https://www.svgrepo.com/show/396360/electric-plug.svg');
     loadFeatureGroupData('fermate_Bus', 'http://localhost:8083/bus', 'https://www.svgrepo.com/show/500067/bus-stop.svg');
-    
   };
 
-
-
-
-
-
-
-
-  const surveyKeys = Array.from(surveyData.keys());
-  const surveyValues = Array.from(surveyData.values());
-
-  axios.post('http://localhost:8083/', { keys: surveyKeys, values: surveyValues })
-    .then((response) => {
-      console.log(response.data);
-    })
-    .catch((error) => {
-      console.error('Error sending survey data to server:', error);
-    });
-
-  //funzione per fare fetch di ogni tipo di PoI dal DB
+  // Function to fetch PoI data from the DB
   let loadFeatureGroupData = (key: string, url: string, urlMarkericon: string) => {
-    //creazione overlay per checkbox menù per la voce di un PoI
+    // Create overlay for checkbox menu for a PoI item
     L.control.layers().addOverlay(layerGroups[key], key);
-    //chiamata get
+    // Get request
     axios.get(url)
-      //ottenuti i dati eseguo una serie di operazioni
+      // Execute a series of operations on received data
       .then((response) => {
-        console.log(response.data);
-
-        //ciclo sull'array di risposta dal db
+        // Iterate through the response array from the database
         response.data.forEach((item: { st_asgeojson: string, nome: string, quartiere: string }) => {
-          //parsing di ogni item della risposta in formato geojson
+          // Parse each item of the response in geojson format
           let geojson = JSON.parse(item.st_asgeojson);
         
-          //creazione marker con icona  appropriata
+          // Create marker with appropriate icon
           const markerIcon = L.icon({
             iconUrl: urlMarkericon,
             iconSize: [25, 41],
@@ -142,54 +122,67 @@ const Map: React.FC<MapProps> = ({ surveyData }) => {
             shadowSize: [41, 41],
           });
 
-          //creazione marker poi si aggiunge al layer 
+          // Create marker and add to the layer 
           L.marker([geojson.coordinates[1], geojson.coordinates[0]], { icon: markerIcon }).addTo(layerGroups[key]);
-
-          
         });
-
       })
-      //in caso di errore segnalo che il fetch dei dati non è andato a buon fine
+      // Handle error if data fetching fails
       .catch((error) => {
         console.error(`Errore durante il recupero dei dati delle ${key}:`, error);
       });
 
+    // Function to generate a random hexadecimal color
+    // const getRandomColor = () => {
+    //   const letters = '0123456789ABCDEF';
+    //   let color = '#';
+    //   for (let i = 0; i < 6; i++) {
+    //     color += letters[Math.floor(Math.random() * 16)];
+    //   }
+    //   return color;
+    // };
 
-    // Funzione per generare un colore casuale in formato esadecimale
-  const getRandomColor = () => {
-    const letters = '0123456789ABCDEF';
-    let color = '#';
-    for (let i = 0; i < 6; i++) {
-      color += letters[Math.floor(Math.random() * 16)];
-    }
-    return color;
-  };
-    
+    // Function to interpolate color using d3-scale and d3-interpolate
+    const colorScale = d3Scale.scaleLinear<string>()
+      .domain([0, 1])
+      .range(['#00FF00', '#FFFF00', '#FFA500', '#FF0000']) // Adjusted color range for more sensitivity
+      .interpolate(d3Interpolate.interpolateRgb); // Use interpolateRgbBasis for smooth color interpolation
 
+    // Function to calculate color based on score
+    const getColorForScore = (score: number, minScore: number, maxScore: number) => {
+      if (maxScore === minScore) return colorScale(0); // Handle edge case where maxScore equals minScore
+      const normalizedScore = (score - minScore) / (maxScore - minScore);
+      return colorScale(normalizedScore);
+    };
 
-    axios.get('http://localhost:8083/quartieri')
-      .then((response) => {
-        response.data.forEach((item: { st_asgeojson: string, quartiere:string }) => {
-          const quartiereLayer = L.geoJSON(JSON.parse(item.st_asgeojson), {
-            style: {
-              fillColor: getRandomColor(), // Genera un colore casuale
-              fillOpacity: 0.1,
-              color: '#000',
-              weight: 0.5,
-            },
-          }).addTo(drawnItemsRef.current!);
+    // Fetch apartments data and create markers with colors
+    axios.get('http://localhost:8083/apartments')
+      .then((apartments) => {
+        const minScore = Math.min(...apartments.data.map((item: any) => item.score));
+        const maxScore = Math.max(...apartments.data.map((item: any) => item.score));
 
-          quartiereLayer.bindPopup(item.quartiere);
+        apartments.data.forEach((item: { geometry: string, prezzo: string, score: number }) => {
+          const geojson = JSON.parse(item.geometry);
+          const color = getColorForScore(item.score, minScore, maxScore);
+
+          const markerIcon = L.divIcon({
+            className: 'custom-div-icon',
+            html: `<div style="background-color:${color}; width: 25px; height: 25px; border-radius: 50%; border: 2px solid #FFFFFF;"></div>`,
+            iconSize: [30, 42],
+            iconAnchor: [15, 42],
+            popupAnchor: [1, -34],
+          });
+
+          L.marker([geojson.coordinates[1], geojson.coordinates[0]], { icon: markerIcon })
+            .bindPopup(`Prezzo: ${item.prezzo}<br>Score: ${item.score}`)
+            .addTo(drawnItemsRef.current!);
         });
-        
-        
       })
       .catch((error) => {
         console.error('Errore durante il recupero dei dati delle geofence:', error);
       });
   };
 
-  //return del componente mappa con risposte del sondaggio fatto in precedenza
+  // Return map component with survey data from previous survey
   return (
     <div style={{ display: 'flex' }}>
       <div id="map" style={{ height: '100vw', width: '70vw' }} />
