@@ -3,8 +3,7 @@ import L from 'leaflet';
 import 'leaflet-draw';
 import 'leaflet-routing-machine';
 import * as d3Scale from 'd3-scale';
-import * as d3Interpolate from 'd3-interpolate'  ; // Import interpolateRgbBasis for more sensitive color interpolation
-
+import * as d3Interpolate from 'd3-interpolate'  ;
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-draw/dist/leaflet.draw.css';
 import axios from 'axios';
@@ -17,8 +16,7 @@ const Map: React.FC<MapProps> = ({ surveyData }) => {
   let mapRef = useRef<L.Map | null>(null);
   let drawnItemsRef = useRef<L.FeatureGroup<any> | null>(null);
   const [center, _setCenter] = useState<[number, number]>([44.494887, 11.3426]);
-  const [circleLayer, _setCircleLayer] = useState<L.Circle | null>(null);
-  const [polyLayer, _setPolyLayer] = useState<L.Polygon | null>(null);
+  
 
   // Use LayerGroup instead of FeatureGroup
   const layerGroups: { [key: string]: L.LayerGroup } = {
@@ -80,10 +78,37 @@ const Map: React.FC<MapProps> = ({ surveyData }) => {
 
     L.control.layers(baseMaps, layerGroups).addTo(mapRef.current!);
 
+    axios.get('http://localhost:8083/quartieri')
+  .then((response) => {
+    console.log(response.data);
+    response.data.forEach((item:{st_asgeojson:string,quartiere:string}) => {
+      const geojson = JSON.parse(item.st_asgeojson);
+
+      // Crea il layer GeoJSON con stile e popup
+      const geojsonLayer = L.geoJSON(geojson, {
+        style: {
+          color: getRandomColor(),
+          weight: 2
+        },
+        onEachFeature: function (_feature, layer) {
+          layer.bindPopup(`<b>Quartiere:</b> ${item.quartiere}`);
+        }
+      });
+
+      // Aggiungi il layer alla mappa
+      geojsonLayer.addTo(drawnItemsRef.current!);
+    });
+  })
+  .catch((error) => {
+    console.error('Errore durante il recupero dei dati delle geofence:', error);
+  });
+
     return () => {
       mapRef.current?.remove();
     };
-  }, [center, circleLayer, polyLayer]);
+
+    
+  }, [center]);
 
   // Load Points of Interest (PoI) on the map
   let loadPoI = () => {
@@ -99,6 +124,8 @@ const Map: React.FC<MapProps> = ({ surveyData }) => {
     loadFeatureGroupData('colonnine_Elettriche', 'http://localhost:8083/electric', 'https://www.svgrepo.com/show/396360/electric-plug.svg');
     loadFeatureGroupData('fermate_Bus', 'http://localhost:8083/bus', 'https://www.svgrepo.com/show/500067/bus-stop.svg');
   };
+
+  
 
   // Function to fetch PoI data from the DB
   let loadFeatureGroupData = (key: string, url: string, urlMarkericon: string) => {
@@ -131,28 +158,24 @@ const Map: React.FC<MapProps> = ({ surveyData }) => {
         console.error(`Errore durante il recupero dei dati delle ${key}:`, error);
       });
 
-    // Function to generate a random hexadecimal color
-    // const getRandomColor = () => {
-    //   const letters = '0123456789ABCDEF';
-    //   let color = '#';
-    //   for (let i = 0; i < 6; i++) {
-    //     color += letters[Math.floor(Math.random() * 16)];
-    //   }
-    //   return color;
-    // };
+    
 
     // Function to interpolate color using d3-scale and d3-interpolate
     const colorScale = d3Scale.scaleLinear<string>()
-      .domain([0, 1])
-      .range(['#00FF00', '#FFFF00', '#FFA500', '#FF0000']) // Adjusted color range for more sensitivity
-      .interpolate(d3Interpolate.interpolateRgb); // Use interpolateRgbBasis for smooth color interpolation
+    .domain([0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1])
+    .range(['#00ff00', '#66ff00', '#ccff00', '#ffff00', '#ffcc00', '#ff9900', '#ff6600', '#ff3300', '#ff0000', '#cc0000', '#990000'])
+    .interpolate(d3Interpolate.interpolateRgb); // Use interpolateRgbBasis for smooth color interpolation
 
     // Function to calculate color based on score
     const getColorForScore = (score: number, minScore: number, maxScore: number) => {
-      if (maxScore === minScore) return colorScale(0); // Handle edge case where maxScore equals minScore
-      const normalizedScore = (score - minScore) / (maxScore - minScore);
+      if (maxScore === minScore) 
+          return colorScale(0); // Handle edge case where maxScore equals minScore
+      let normalizedScore = (score - minScore) / (maxScore - minScore);
       return colorScale(normalizedScore);
     };
+
+  
+
 
     // Fetch apartments data and create markers with colors
     axios.get('http://localhost:8083/apartments')
@@ -181,6 +204,25 @@ const Map: React.FC<MapProps> = ({ surveyData }) => {
         console.error('Errore durante il recupero dei dati delle geofence:', error);
       });
   };
+
+  // Function to generate a random hexadecimal color
+  const getRandomColor = () => {
+    const letters = '0123456789ABCDEF';
+    let color = '#';
+    for (let i = 0; i < 6; i++) {
+      color += letters[Math.floor(Math.random() * 16)];
+    }
+    return color;
+  };
+
+  axios.post('http://localhost:8083/', Object.fromEntries(surveyData))
+  .then((response) => {
+    console.log('Survey data sent successfully:', response.data);
+  })
+  .catch((error) => {
+    console.error('Error sending survey data:', error);
+  });
+
 
   // Return map component with survey data from previous survey
   return (

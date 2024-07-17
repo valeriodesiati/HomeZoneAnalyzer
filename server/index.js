@@ -14,7 +14,7 @@ app.use(express.json()
 var client = new pg.Client({
 	user: 'postgres',
 	password: 'postgres',
-  //ricorda di mettere postgis quando dovrai dockerizzare l'app
+  	//ricorda di mettere postgis quando dovrai dockerizzare l'app
 	host: 'localhost',
 	port: '5432',
 	database: 'sca',
@@ -71,24 +71,32 @@ app.listen(8083, () => {
 
 
 
-app.post('/',(req,res)=>{
+app.post('/', (req, res) => {
+	client.query('truncate table user_votes');
+    Object.entries(req.body).forEach(([key, value]) => {
+        // Sanitize and validate 'key' and 'value' if necessary
+		
+        // Use parameterized query to prevent SQL Injection
+        client.query('INSERT INTO user_votes (poi_type, vote) VALUES ($1, $2)', [key, parseInt(value, 10)], (error, results) => {
+            if (error) {
+                console.error('Errore Inserimento voto sondaggio:', error);
+                res.status(500).send('Errore durante l\'inserimento del voto');
+            } else {
+                console.log("Record voto inserito con successo");
+                // Not recommended: res.send(results.rows);
+            }
+        });
 
-	client.query(`truncate table user_votes`);
+        console.log([key, value]);
+    });
 
-	for (let i = 0; i < req.body.values.length; i++) {
-		
-		client.query(`INSERT INTO user_votes (poi_type, vote) VALUES ('${req.body.keys[i]}', '${req.body.values[i]}');`);
-		
-		
-		
-	}
+    res.send('INSERIMENTO VOTI COMPLETATO CON SUCCESSO');
+});
 
-	res.send('INSERIMENTO VOTI ANDATO')
-	
-})
 
 
 app.get('/apartments',(req,res)=>{
+
 
 	client.query(GET_APARTMENTS_QUERY,(error,results)=>{
 		if (error) {
@@ -282,38 +290,41 @@ app.get('/quartieri',(req,res) =>{
 
 
 
+
+
 //post request for the send polygon area 
-app.post('/shape/polygon',  (req, res) => {
-    let geojson = req.body; // Supponendo che req.body sia una lista di coordinate [{lat: ..., lng: ...}, ...]
-    console.log(geojson);
-	//query to find schoools inside polygon area
-	let query= `
-      SELECT ST_AsGeoJSON(es.geometry::geometry)
-      FROM public."elenco-scuole" es
-      WHERE ST_Contains(
-        ST_SetSRID(ST_GeomFromGeoJSON('${JSON.stringify(geojson.geometry)}'), 4326),
-        es.geometry::geometry
-      );
-    `;
-	try {
-		//query execution
-        client.query(query, (error, results) => {
-		if (error) {
-			console.error('Errore durante l\'esecuzione della query:', error);
-		} else {
-			console.log("query effettutata con successo");
-			console.log(results.rows);
-			res.send(results.rows)
-		}
-	  });
-	}
-	catch (err) {
-		console.error('Errore durante il confronto delle geometrie:', err);
-		res.status(500).json({ error: 'Errore durante il confronto delle geometrie' });
-	}
-    
-   
-});
+// app.post('/shape/polygon',  (req, res) => {
+//     let geojson = req.body; // Supponendo che req.body sia una lista di coordinate [{lat: ..., lng: ...}, ...]
+//     console.log(geojson);
+// 	//query to find schoools inside polygon area
+// 	let query= `
+//       SELECT ST_AsGeoJSON(es.geometry::geometry)
+//       FROM public."elenco-scuole" es
+//       WHERE ST_Contains(
+//         ST_SetSRID(ST_GeomFromGeoJSON('${JSON.stringify(geojson.geometry)}'), 4326),
+//         es.geometry::geometry
+//       );
+//     `;
+// 	try {
+// 		//query execution
+//         client.query(query, (error, results) => {
+// 		if (error) {
+// 			console.error('Errore durante l\'esecuzione della query:', error);
+// 		} else {
+// 			console.log("query effettutata con successo");
+// 			console.log(results.rows);
+// 			res.send(results.rows)
+// 		}
+// 	  });
+// 	}
+// 	catch (err) {
+// 		console.error('Errore durante il confronto delle geometrie:', err);
+// 		res.status(500).json({ error: 'Errore durante il confronto delle geometrie' });
+// 	}
+// });
+
+
+
 
 // app.get('/g', (req, res) => {
 //       let query='select lat,lon from countryschema.countries'

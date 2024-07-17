@@ -39,6 +39,22 @@ axios.get('http://localhost:8083')
 });
 
 
+let loadPoI = () => {
+    loadFeatureGroupData('aree_verdi', 'http://localhost:8083/green_areas', 'https://www.svgrepo.com/show/500085/tree.svg');
+    loadFeatureGroupData('scuole', 'http://localhost:8083/schools', 'https://www.svgrepo.com/show/398258/school.svg');
+    loadFeatureGroupData('sport', 'http://localhost:8083/sport', 'https://www.svgrepo.com/show/475554/gym.svg');
+    loadFeatureGroupData('farmacie', 'http://localhost:8083/pharmacy', 'https://www.svgrepo.com/show/475523/pharmacy.svg');
+    loadFeatureGroupData('biblioteche', 'http://localhost:8083/library', 'https://www.svgrepo.com/show/395907/books.svg');
+    loadFeatureGroupData('ospedali', 'http://localhost:8083/hospital', 'https://www.svgrepo.com/show/500071/hospital.svg');
+    loadFeatureGroupData('biciclette', 'http://localhost:8083/bycicles', 'https://www.svgrepo.com/show/105391/bycicle.svg');
+    loadFeatureGroupData('teatri_Cinema', 'http://localhost:8083/cinemaTeathers', 'https://www.svgrepo.com/show/418375/cinema-dessert-fastfood.svg');
+    loadFeatureGroupData('ludico', 'http://localhost:8083/ludic', 'https://www.svgrepo.com/show/475275/star.svg');
+    loadFeatureGroupData('colonnine_Elettriche', 'http://localhost:8083/electric', 'https://www.svgrepo.com/show/396360/electric-plug.svg');
+    loadFeatureGroupData('fermate_Bus', 'http://localhost:8083/bus', 'https://www.svgrepo.com/show/500067/bus-stop.svg');
+  };
+
+
+
 //calcolo percorso basato su strade dati 2 punti
     // L.Routing.control({
     //   waypoints:[

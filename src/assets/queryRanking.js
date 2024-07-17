@@ -1,90 +1,79 @@
-export const GET_APARTMENTS_QUERY = 
-` WITH poi_distances AS (
+export const GET_APARTMENTS_QUERY = `WITH poi_distances AS (
+    -- Altri tipi di POI rimangono invariati
     SELECT a.id AS apartment_id,
-        'school' AS poi_type,
-        MIN(ST_Distance(a.geometry, p.geometry)) AS distance
+           'school' AS poi_type,
+           MIN(ST_Distance(a.geometry, p.geometry)) AS distance
     FROM apartments a
     CROSS JOIN schools p
     GROUP BY a.id
     UNION ALL
-    SELECT
-        a.id AS apartment_id,
-        'electricStations' AS poi_type,
-        MIN(ST_Distance(a.geometry, p.geometry)) AS distance
+    SELECT a.id AS apartment_id,
+           'electricStations' AS poi_type,
+           MIN(ST_Distance(a.geometry, p.geometry)) AS distance
     FROM apartments a
     CROSS JOIN electric_stations p
     GROUP BY a.id
     UNION ALL
-    SELECT
-        a.id AS apartment_id,
-        'pharmacies' AS poi_type,
-        MIN(ST_Distance(a.geometry, p.geometry)) AS distance
+    SELECT a.id AS apartment_id,
+           'pharmacies' AS poi_type,
+           MIN(ST_Distance(a.geometry, p.geometry)) AS distance
     FROM apartments a
     CROSS JOIN pharmacies p
     GROUP BY a.id
     UNION ALL
-    SELECT
-        a.id AS apartment_id,
-        'libraries' AS poi_type,
-        MIN(ST_Distance(a.geometry, p.geometry)) AS distance
+    SELECT a.id AS apartment_id,
+           'libraries' AS poi_type,
+           MIN(ST_Distance(a.geometry, p.geometry)) AS distance
     FROM apartments a
     CROSS JOIN libraries p
     GROUP BY a.id
     UNION ALL
-    SELECT
-        a.id AS apartment_id,
-        'theaters' AS poi_type,
-        MIN(ST_Distance(a.geometry, p.geometry)) AS distance
+    SELECT a.id AS apartment_id,
+           'theaters' AS poi_type,
+           MIN(ST_Distance(a.geometry, p.geometry)) AS distance
     FROM apartments a
     CROSS JOIN theaters p
     GROUP BY a.id
     UNION ALL
-    SELECT
-        a.id AS apartment_id,
-        'hospitals' AS poi_type,
-        MIN(ST_Distance(a.geometry, p.geometry)) AS distance
+    SELECT a.id AS apartment_id,
+           'hospitals' AS poi_type,
+           CASE
+               WHEN COUNT(p.id) >= 1 THEN 1
+               ELSE 5
+           END AS distance
     FROM apartments a
-    CROSS JOIN hospitals p
+    LEFT JOIN hospitals p ON ST_DWithin(a.geometry, p.geometry, 500)
     GROUP BY a.id
     UNION ALL
-    SELECT
-        a.id AS apartment_id,
-        'bikeRacks' AS poi_type,
-        MIN(ST_Distance(a.geometry, p.geometry)) AS distance
+    SELECT a.id AS apartment_id,
+           'bikeRacks' AS poi_type,
+           MIN(ST_Distance(a.geometry, p.geometry)) AS distance
     FROM apartments a
     CROSS JOIN bike_racks p
     GROUP BY a.id
     UNION ALL
-    SELECT
-        a.id AS apartment_id,
-        'sportsAreas' AS poi_type,
-        MIN(ST_Distance(a.geometry, p.geometry)) AS distance
+    SELECT a.id AS apartment_id,
+           'sportsAreas' AS poi_type,
+           MIN(ST_Distance(a.geometry, p.geometry)) AS distance
     FROM apartments a
     CROSS JOIN sports_areas p
     GROUP BY a.id
     UNION ALL
-    SELECT
-        a.id AS apartment_id,
-        'recreation' AS poi_type,
-        MIN(ST_Distance(a.geometry, p.geometry)) AS distance
+    SELECT a.id AS apartment_id,
+           'recreation' AS poi_type,
+           MIN(ST_Distance(a.geometry, p.geometry)) AS distance
     FROM apartments a
     CROSS JOIN ludics p
     GROUP BY a.id
     UNION ALL
-    SELECT
-        a.id AS apartment_id,
-        'busStops' AS poi_type,
-        MIN(ST_Distance(a.geometry, p.geometry)) AS distance
+    SELECT a.id AS apartment_id,
+           'busStops' AS poi_type,
+           CASE
+               WHEN COUNT(p.id) >= 2 THEN 1
+               ELSE 5
+           END AS distance
     FROM apartments a
-    CROSS JOIN bus_stops p
-    GROUP BY a.id
-	UNION ALL
-    SELECT
-        a.id AS apartment_id,
-        'ludics' AS poi_type,
-        MIN(ST_Distance(a.geometry, p.geometry)) AS distance
-    FROM apartments a
-    CROSS JOIN bus_stops p
+    LEFT JOIN bus_stops p ON ST_DWithin(a.geometry, p.geometry, 300)
     GROUP BY a.id
 ),
 weighted_distances AS (
@@ -106,9 +95,10 @@ apartment_scores AS (
 )
 SELECT
     a.id AS apartment_id,
-	ST_AsGeoJSON(a.geometry::geometry) as geometry,
-	a.prezzo,
-    ascore.total_weighted_distance as score
+    ST_AsGeoJSON(a.geometry::geometry) AS geometry,
+    a.prezzo,
+    ascore.total_weighted_distance AS score
 FROM apartments a
 JOIN apartment_scores ascore ON a.id = ascore.apartment_id
-ORDER BY ascore.total_weighted_distance ASC;`
+ORDER BY ascore.total_weighted_distance ASC;
+`
