@@ -2,7 +2,7 @@ import express from 'express';
 const app = express();
 import cors from 'cors';
 import pg from 'pg'
-import {GET_APARTMENTS_QUERY} from '../src/assets/queryRanking.js'
+import {GET_APARTMENTS_QUERY,GET_NEIGHBOURHOOD_RANKING} from '../src/assets/queryRanking.js'
 
 
 //allow CORS-policy
@@ -96,8 +96,6 @@ app.post('/', (req, res) => {
 
 
 app.get('/apartments',(req,res)=>{
-
-
 	client.query(GET_APARTMENTS_QUERY,(error,results)=>{
 		if (error) {
             console.error('Errore durante l\'esecuzione della query:', error);
@@ -111,7 +109,7 @@ app.get('/apartments',(req,res)=>{
 })
 
 
-app.get('/schools', (req, res) => {
+app.get('/scuole', (req, res) => {
       let query=`SELECT ST_AsGeoJSON(es.geometry::geometry),es.quartiere,es.nome
       			 FROM schools es;`
 
@@ -143,7 +141,7 @@ app.get('/sport', (req, res) => {
 
 
 
-app.get('/pharmacy', (req, res) => {
+app.get('/farmacie', (req, res) => {
 	let query=`SELECT ST_AsGeoJSON(es.geometry::geometry)
 				 FROM pharmacies es;`
 
@@ -158,7 +156,7 @@ app.get('/pharmacy', (req, res) => {
 })
 
 
-app.get('/bycicles', (req, res) => {
+app.get('/biciclette', (req, res) => {
   let query=`SELECT ST_AsGeoJSON(es.geometry::geometry)
 			   FROM bike_racks es;`
 			 
@@ -172,7 +170,7 @@ app.get('/bycicles', (req, res) => {
 	});
 })
 
-app.get('/green_areas', (req, res) => {
+app.get('/aree_verdi', (req, res) => {
 	let query=`SELECT ST_AsGeoJSON(es.geometry::geometry)
 				 FROM green_areas es;`
 
@@ -186,7 +184,7 @@ app.get('/green_areas', (req, res) => {
 	  });
 })
 
-app.get('/hospital', (req, res) => {
+app.get('/ospedali', (req, res) => {
 	let query=`SELECT ST_AsGeoJSON(es.geometry::geometry)
 				 FROM hospitals es;`
 
@@ -201,7 +199,7 @@ app.get('/hospital', (req, res) => {
 })
 
 
-app.get('/library', (req, res) => {
+app.get('/biblioteche', (req, res) => {
   let query=`SELECT ST_AsGeoJSON(es.geometry::geometry)
 			   FROM libraries es;`
 			 
@@ -215,7 +213,7 @@ app.get('/library', (req, res) => {
 	});
 })
 
-app.get('/electric', (req, res) => {
+app.get('/colonnine_Elettriche', (req, res) => {
 	let query=`SELECT ST_AsGeoJSON(es.geometry::geometry)
 				 FROM electric_stations es;`
 			   
@@ -230,7 +228,7 @@ app.get('/electric', (req, res) => {
   })
 
   
-  app.get('/cinemaTeathers', (req, res) => {
+  app.get('/teatri_Cinema', (req, res) => {
 	let query=`SELECT ST_AsGeoJSON(es.geometry::geometry)
 				 FROM theaters es;`
 			   
@@ -245,7 +243,7 @@ app.get('/electric', (req, res) => {
   })
 
   
-  app.get('/ludic', (req, res) => {
+  app.get('/ludico', (req, res) => {
 	let query=`SELECT ST_AsGeoJSON(es.geometry::geometry)
 				 FROM ludics es;`
 			   
@@ -259,7 +257,7 @@ app.get('/electric', (req, res) => {
 	  });
   })
 
-  app.get('/bus', (req, res) => {
+  app.get('/fermate_Bus', (req, res) => {
 	let query=`SELECT ST_AsGeoJSON(es.geometry::geometry)
 				 FROM bus_stops es`
 			   
@@ -276,9 +274,7 @@ app.get('/electric', (req, res) => {
   
 
 app.get('/quartieri',(req,res) =>{
-	let query=`SELECT ST_AsGeoJSON(n.geometry),n.quartiere from neighborhoods n`
-			   
-	client.query(query, (error, results) => {
+	client.query(GET_NEIGHBOURHOOD_RANKING, (error, results) => {
 		if (error) {
 		  console.error('Errore durante l\'esecuzione della query:', error);
 		} else {
