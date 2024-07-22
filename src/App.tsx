@@ -3,9 +3,9 @@ import Survey from './components/Survey';
 import Map from './components/Map';
 
 const App: React.FC = () => {
-  const [surveyData, setSurveyData] = useState<number[] | null>(null);
+  const [surveyData, setSurveyData] = useState<Map<string, number> | null>(null);
 
-  const handleSurveySubmit = (data: number[]) => {
+  const handleSurveySubmit = (data: Map<string, number>) => {
     setSurveyData(data);
   };
 
