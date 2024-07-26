@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import L from 'leaflet';
+import L, { latLng } from 'leaflet';
 import 'leaflet-draw';
 import 'leaflet.markercluster';
 import 'leaflet-routing-machine';
@@ -12,17 +12,20 @@ import * as d3Scale from 'd3-scale';
 import * as d3Interpolate from 'd3-interpolate';
 import LoadingOverlay from './LoadingOverlay'; // Import the LoadingOverlay component
 import mapboxgl from 'mapbox-gl';
-
 mapboxgl.accessToken = 'pk.eyJ1IjoiZXNzZWVlZWVlZWVlZWVlZSIsImEiOiJjbHR0dDRpd2QwY2lwMnBvdThqNTlud2xxIn0.JKesOWYFKHZP3y_T2TLVUw';
+
+
 
 interface MapProps {
   surveyData: Map<string, number>;
 }
 
+
+//marker per isochrone API
+
+
 const Map: React.FC<MapProps> = ({ surveyData }) => {
   const mapRef = useRef<L.Map | null>(null);
-  // const [routingControl, setRoutingControl] = useState<L.Routing.Control | null>(null);
-  // const [routingProfile, setRoutingProfile] = useState<string>('mapbox/driving'); // State for routing profile
   const [center] = useState<[number, number]>([44.494887, 11.3426]);
   const [bestQuartiere, setBestQuartiere] = useState<string>('');
   const clusterQuartieri = useRef<L.MarkerClusterGroup | null>(null);
@@ -31,7 +34,6 @@ const Map: React.FC<MapProps> = ({ surveyData }) => {
   const [isQuartieriLoaded, setIsQuartieriLoaded] = useState<boolean>(false);
   const [isApartmentsLoaded, setIsApartmentsLoaded] = useState<boolean>(false);
   
-
   //struttura
   let poiMap: { [key: string]: L.LayerGroup } = {
     scuole: L.layerGroup(),
@@ -46,8 +48,10 @@ const Map: React.FC<MapProps> = ({ surveyData }) => {
     ludico: L.layerGroup(),
     fermate_Bus: L.layerGroup(),
   };
-  
 
+  let isochroneMarker = new L.Marker(latLng(44.494887,11.3426163),{draggable:true})
+  
+  
   useEffect(() => {
     mapRef.current = L.map('map', {
       center,
@@ -59,10 +63,8 @@ const Map: React.FC<MapProps> = ({ surveyData }) => {
       ],
     });
 
-
-
-
     drawnItemsRef.current = new L.FeatureGroup();
+    mapRef.current.addLayer(isochroneMarker)
     mapRef.current.addLayer(drawnItemsRef.current);
 
     const drawControl = new L.Control.Draw({
@@ -70,11 +72,11 @@ const Map: React.FC<MapProps> = ({ surveyData }) => {
         featureGroup: drawnItemsRef.current,
       },
     });
+
     drawControl.setDrawingOptions({
       polyline: false,
       circlemarker: false,
       rectangle: false,
-      polygon: false,
       marker: false,
     });
 
@@ -95,43 +97,20 @@ const Map: React.FC<MapProps> = ({ surveyData }) => {
       "OpenStreetMap.HOT": osmHOT,
     };
 
-    L.control.layers(baseMaps, poiMap).addTo(mapRef.current!);
-
     clusterQuartieri.current = new L.MarkerClusterGroup();
-    mapRef.current.addLayer(clusterQuartieri.current);
+    const overlayMaps = {
+      "Appartamenti": clusterQuartieri.current,
+      ...poiMap
+    };
 
-    // // Initialize routing control
-    // initializeRoutingControl();
+    L.control.layers(baseMaps, overlayMaps).addTo(mapRef.current!);
+
+    mapRef.current.addLayer(clusterQuartieri.current);
 
     return () => {
       mapRef.current?.remove();
     };
   }, [center]);
-
-  // useEffect(() => {
-  //   // Remove the current routing control and reinitialize with new profile
-  //   if (routingControl) {
-  //     mapRef.current?.removeControl(routingControl);
-  //   }
-  //   initializeRoutingControl();
-  // }, [routingProfile]);
-
-  // const initializeRoutingControl = () => {
-  //   const newRoutingControl = L.Routing.control({
-  //     waypoints: [
-  //       L.latLng(44.494887, 11.342616), // Piazza Maggiore
-  //       L.latLng(44.505147, 11.341779), // Stazione di Bologna Centrale
-        
-  //     ],
-  //     router: L.Routing.mapbox(mapboxgl.accessToken, {
-  //       profile: routingProfile,
-  //     }),
-  //     routeWhileDragging: true,
-  //   }).addTo(mapRef.current!);
-  //   setRoutingControl(newRoutingControl);
-  // };
-
- 
 
   useEffect(() => {
     // Fetch and display neighbourhood data
@@ -209,14 +188,54 @@ const Map: React.FC<MapProps> = ({ surveyData }) => {
 
   useEffect(() => {
     axios.post('http://localhost:8083/', Object.fromEntries(surveyData));
+    let transportMode='cycling'
+    let travelTime = 10
+    
+    axios.get(`https://api.mapbox.com/isochrone/v1/mapbox/${transportMode}/${isochroneMarker.getLatLng().lng},${isochroneMarker.getLatLng().lat}?contours_minutes=${travelTime}&polygons=true&access_token=${mapboxgl.accessToken}`)
+    .then((response)=>{
+      let geom = response.data.features[0].geometry
+      
+      L.geoJSON(geom,{style: {
+              color: '#ff0000',
+              weight: 0.5,
+              fillOpacity: 0.5,
+              opacity:1
+
+              
+      }}).addTo(drawnItemsRef.current!)
+      });
+
+     
+      // response.data.features.forEach((item: { geometry: string }) => {
+      //   console.log(item.geometry);
+        
+      //   let geojson = JSON.parse(item.geometry);
+      //   const geojsonLayer = L.geoJSON(geojson, {
+      //     style: {
+      //       color: '#f0f0f0',
+      //       weight: 2,
+      //     }
+      //   })
+      //   geojsonLayer.addTo(drawnItemsRef.current!);
+      // });
+      
+        // onEachFeature: function (_feature, layer) {
+        //   layer.bindPopup(`<b>Quartiere:</b> ${item.nome}`);
+        // },
+      
+     
+    
   }, [surveyData]);
+
+
+  
 
   const loadFeatureGroupData = (key: string, url: string, urlMarkericon: string) => {
     axios.get(url)
       .then((response) => {
         response.data.forEach((item: { st_asgeojson: string, nome: string, quartiere: string }) => {
           let geojson = JSON.parse(item.st_asgeojson);
-
+          
           const markerIcon = L.icon({
             iconUrl: urlMarkericon,
             iconSize: [25, 41],
@@ -233,8 +252,6 @@ const Map: React.FC<MapProps> = ({ surveyData }) => {
       });
   };
 
-
-
   const loadPoI = () => {
     loadFeatureGroupData('aree_verdi', 'http://localhost:8083/aree_verdi', 'https://www.svgrepo.com/show/500085/tree.svg');
     loadFeatureGroupData('scuole', 'http://localhost:8083/scuole', 'https://www.svgrepo.com/show/398258/school.svg');
@@ -249,7 +266,9 @@ const Map: React.FC<MapProps> = ({ surveyData }) => {
     loadFeatureGroupData('fermate_Bus', 'http://localhost:8083/fermate_Bus', 'https://www.svgrepo.com/show/500067/bus-stop.svg');
   };
 
-  loadPoI();
+  useEffect(() => {
+    loadPoI();
+  }, []);
 
   const ApartmentColorScale = d3Scale.scaleLinear<string>()
     .domain([0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1])
@@ -272,7 +291,7 @@ const Map: React.FC<MapProps> = ({ surveyData }) => {
     const normalizedScore = (score - minScore) / (maxScore - minScore);
     return NeighbourhoodColorScale(normalizedScore);
   };
-
+  
   return (
     <div style={{ display: 'flex' }}>
       {loading && <LoadingOverlay />} {/* Use LoadingOverlay component */}
@@ -287,14 +306,6 @@ const Map: React.FC<MapProps> = ({ surveyData }) => {
           ))}
         </ul>
         {bestQuartiere && <h2 style={{ color: '#2AFF00' }}>Miglior Quartiere: {bestQuartiere}</h2>}
-        {/* <div>
-          <label htmlFor="profile">Routing Profile: </label>
-          <select id="profile" value={routingProfile} onChange={(e) => setRoutingProfile(e.target.value)}>
-            <option value="mapbox/driving">Driving</option>
-            <option value="mapbox/walking">Walking</option>
-            <option value="mapbox/cycling">Cycling</option>
-          </select>
-        </div> */}
       </div>
     </div>
   );
