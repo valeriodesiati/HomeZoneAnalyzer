@@ -216,3 +216,28 @@ let loadPoI = () => {
     mapRef.current.on(L.Draw.Event.DELETESTART, (_event) => {
       drawnItemsRef.current?.removeLayer(featureGroup);
     });
+
+
+
+
+const loadFeatureGroupData = (key: string, url: string, urlMarkericon: string) => {
+    axios.get(url)
+      .then((response) => {
+        response.data.forEach((item: { st_asgeojson: string, nome: string, quartiere: string }) => {
+          let geojson = JSON.parse(item.st_asgeojson);
+
+          const markerIcon = L.icon({
+            iconUrl: urlMarkericon,
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+            popupAnchor: [1, -34],
+            shadowSize: [41, 41],
+          });
+
+          L.marker([geojson.coordinates[1], geojson.coordinates[0]], { icon: markerIcon }).addTo(layerGroups[key]);
+        });
+      })
+      .catch((error) => {
+        console.error(`Error fetching data for ${key}:`, error);
+      });
+  };
