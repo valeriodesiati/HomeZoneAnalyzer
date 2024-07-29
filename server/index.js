@@ -70,7 +70,7 @@ app.listen(8083, () => {
 
 
 
-
+//end point voti sondaggio
 app.post('/', (req, res) => {
 	client.query('truncate table user_votes');
     Object.entries(req.body).forEach(([key, value]) => {
@@ -94,7 +94,7 @@ app.post('/', (req, res) => {
 });
 
 
-
+//end point appartamenti
 app.get('/apartments',(req,res)=>{
 	client.query(GET_APARTMENTS_QUERY,(error,results)=>{
 		if (error) {
@@ -108,7 +108,7 @@ app.get('/apartments',(req,res)=>{
 
 })
 
-
+//end point scuole
 app.get('/scuole', (req, res) => {
       let query=`SELECT ST_AsGeoJSON(es.geometry::geometry),es.quartiere,es.nome
       			 FROM schools es;`
@@ -123,7 +123,7 @@ app.get('/scuole', (req, res) => {
         });
 })
 
-
+//end point sport
 app.get('/sport', (req, res) => {
 	let query=`SELECT ST_AsGeoJSON(es.geometry::geometry)
 				 FROM sports_areas es;`
@@ -140,7 +140,7 @@ app.get('/sport', (req, res) => {
 
 
 
-
+//end point 
 app.get('/farmacie', (req, res) => {
 	let query=`SELECT ST_AsGeoJSON(es.geometry::geometry)
 				 FROM pharmacies es;`
@@ -155,7 +155,7 @@ app.get('/farmacie', (req, res) => {
 	  });
 })
 
-
+//end point biciclette
 app.get('/biciclette', (req, res) => {
   let query=`SELECT ST_AsGeoJSON(es.geometry::geometry)
 			   FROM bike_racks es;`
@@ -170,6 +170,8 @@ app.get('/biciclette', (req, res) => {
 	});
 })
 
+
+//end point aree verdi
 app.get('/aree_verdi', (req, res) => {
 	let query=`SELECT ST_AsGeoJSON(es.geometry::geometry)
 				 FROM green_areas es;`
@@ -184,6 +186,7 @@ app.get('/aree_verdi', (req, res) => {
 	  });
 })
 
+//end point ospedali
 app.get('/ospedali', (req, res) => {
 	let query=`SELECT ST_AsGeoJSON(es.geometry::geometry)
 				 FROM hospitals es;`
@@ -198,7 +201,7 @@ app.get('/ospedali', (req, res) => {
 	  });
 })
 
-
+//end point biblioteche
 app.get('/biblioteche', (req, res) => {
   let query=`SELECT ST_AsGeoJSON(es.geometry::geometry)
 			   FROM libraries es;`
@@ -213,6 +216,7 @@ app.get('/biblioteche', (req, res) => {
 	});
 })
 
+//end point colonnine elettriche
 app.get('/colonnine_Elettriche', (req, res) => {
 	let query=`SELECT ST_AsGeoJSON(es.geometry::geometry)
 				 FROM electric_stations es;`
@@ -227,7 +231,7 @@ app.get('/colonnine_Elettriche', (req, res) => {
 	  });
   })
 
-  
+  //end point teatri e cinema
   app.get('/teatri_Cinema', (req, res) => {
 	let query=`SELECT ST_AsGeoJSON(es.geometry::geometry)
 				 FROM theaters es;`
@@ -242,7 +246,7 @@ app.get('/colonnine_Elettriche', (req, res) => {
 	  });
   })
 
-  
+  //end point zone ludiche
   app.get('/ludico', (req, res) => {
 	let query=`SELECT ST_AsGeoJSON(es.geometry::geometry)
 				 FROM ludics es;`
@@ -256,7 +260,7 @@ app.get('/colonnine_Elettriche', (req, res) => {
 		}
 	  });
   })
-
+  //end point fermate bus
   app.get('/fermate_Bus', (req, res) => {
 	let query=`SELECT ST_AsGeoJSON(es.geometry::geometry)
 				 FROM bus_stops es`
@@ -272,7 +276,7 @@ app.get('/colonnine_Elettriche', (req, res) => {
   })
   
   
-
+//end point dei quartieri
 app.get('/quartieri',(req,res) =>{
 	client.query(GET_NEIGHBOURHOOD_RANKING, (error, results) => {
 		if (error) {

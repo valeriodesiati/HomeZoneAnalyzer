@@ -14,27 +14,27 @@ import LoadingOverlay from './LoadingOverlay'; // Import the LoadingOverlay comp
 import mapboxgl from 'mapbox-gl';
 mapboxgl.accessToken = 'pk.eyJ1IjoiZXNzZWVlZWVlZWVlZWVlZSIsImEiOiJjbHR0dDRpd2QwY2lwMnBvdThqNTlud2xxIn0.JKesOWYFKHZP3y_T2TLVUw';
 
-
-
+// props per passare la mappa da Survey a Map
 interface MapProps {
   surveyData: Map<string, number>;
 }
 
-
-//marker per isochrone API
-
-
+// marker per isochrone API
 const Map: React.FC<MapProps> = ({ surveyData }) => {
   const mapRef = useRef<L.Map | null>(null);
   const [center] = useState<[number, number]>([44.494887, 11.3426]);
   const [bestQuartiere, setBestQuartiere] = useState<string>('');
   const clusterQuartieri = useRef<L.MarkerClusterGroup | null>(null);
   const drawnItemsRef = useRef<L.FeatureGroup<any> | null>(null);
+  const isochroneAreasRef = useRef<L.FeatureGroup<any> | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [isQuartieriLoaded, setIsQuartieriLoaded] = useState<boolean>(false);
   const [isApartmentsLoaded, setIsApartmentsLoaded] = useState<boolean>(false);
+  const [travelTime, setTravelTime] = useState<number>(5);
+  const [transportMode, setTransportMode] = useState<string>('walking');
+  const [isochronePosition, setIsochronePosition] = useState<L.LatLng>(latLng(44.494887, 11.3426163));
   
-  //struttura
+  // struttura
   let poiMap: { [key: string]: L.LayerGroup } = {
     scuole: L.layerGroup(),
     aree_verdi: L.layerGroup(),
@@ -49,9 +49,47 @@ const Map: React.FC<MapProps> = ({ surveyData }) => {
     fermate_Bus: L.layerGroup(),
   };
 
-  let isochroneMarker = new L.Marker(latLng(44.494887,11.3426163),{draggable:true})
+  let isochroneMarker = new L.Marker(isochronePosition, { draggable: true });
+  let areaIsochroneLayer = new L.FeatureGroup();
+  // let travelTime = 5
+  // let transportMode = 'walking'
+
+
   
   
+
+  function updateTravelTime(event: React.ChangeEvent<HTMLSelectElement>) {
+    mapRef.current?.removeLayer(areaIsochroneLayer)
+    setTravelTime(Number(event.target.value));
+    
+  }
+
+  function updateTravelMode(event: React.ChangeEvent<HTMLSelectElement>) {
+    mapRef.current?.removeLayer(areaIsochroneLayer)
+    areaIsochroneLayer.eachLayer(e=>e.remove())
+    setTransportMode(event.target.value);
+    
+  }
+
+  // function updateIsochrone(){
+  //   areaIsochroneLayer.clearLayers();
+    
+    
+  //   axios.get(`https://api.mapbox.com/isochrone/v1/mapbox/${transportMode}/${isochroneMarker.getLatLng().lng},${isochroneMarker.getLatLng().lat}?contours_minutes=${travelTime}&polygons=true&access_token=${mapboxgl.accessToken}`)
+  //   .then((response) => {
+  //     let geom = response.data.features[0].geometry;
+
+  //     L.geoJSON(geom, {
+  //       style: {
+  //         color: '#ff0000',
+  //         weight: 0.5,
+  //         fillOpacity: 0.5,
+  //         opacity: 1
+  //       }
+  //     }).addTo(areaIsochroneLayer);
+  //   });
+  // }
+
   useEffect(() => {
     mapRef.current = L.map('map', {
       center,
@@ -63,9 +101,14 @@ const Map: React.FC<MapProps> = ({ surveyData }) => {
       ],
     });
 
+
+
     drawnItemsRef.current = new L.FeatureGroup();
-    mapRef.current.addLayer(isochroneMarker)
+    isochroneAreasRef.current = new L.FeatureGroup()
+    mapRef.current.addLayer(isochroneMarker);
     mapRef.current.addLayer(drawnItemsRef.current);
+    mapRef.current.addLayer(isochroneAreasRef.current)
+    // Aggiunge il layer isocrona alla mappa
 
     const drawControl = new L.Control.Draw({
       edit: {
@@ -145,8 +188,6 @@ const Map: React.FC<MapProps> = ({ surveyData }) => {
           console.error('Error fetching neighbourhood data:', error);
           setLoading(false);
         });
-
-        
     }
   }, [isQuartieriLoaded, isApartmentsLoaded]);
 
@@ -188,54 +229,37 @@ const Map: React.FC<MapProps> = ({ surveyData }) => {
 
   useEffect(() => {
     axios.post('http://localhost:8083/', Object.fromEntries(surveyData));
-    let transportMode='cycling'
-    let travelTime = 10
-    
-    axios.get(`https://api.mapbox.com/isochrone/v1/mapbox/${transportMode}/${isochroneMarker.getLatLng().lng},${isochroneMarker.getLatLng().lat}?contours_minutes=${travelTime}&polygons=true&access_token=${mapboxgl.accessToken}`)
-    .then((response)=>{
-      let geom = response.data.features[0].geometry
-      
-      L.geoJSON(geom,{style: {
-              color: '#ff0000',
-              weight: 0.5,
-              fillOpacity: 0.5,
-              opacity:1
-
-              
-      }}).addTo(drawnItemsRef.current!)
-      });
-
-     
-      // response.data.features.forEach((item: { geometry: string }) => {
-      //   console.log(item.geometry);
-        
-      //   let geojson = JSON.parse(item.geometry);
-      //   const geojsonLayer = L.geoJSON(geojson, {
-      //     style: {
-      //       color: '#f0f0f0',
-      //       weight: 2,
-      //     }
-      //   })
-      //   geojsonLayer.addTo(drawnItemsRef.current!);
-      // });
-      
-        // onEachFeature: function (_feature, layer) {
-        //   layer.bindPopup(`<b>Quartiere:</b> ${item.nome}`);
-        // },
-      
-     
-    
   }, [surveyData]);
 
+  isochroneMarker.on('dragend', () => {
+    setIsochronePosition(isochroneMarker.getLatLng());
+  })
 
-  
+  useEffect(()=>{
+      areaIsochroneLayer.clearLayers()
+      isochroneAreasRef.current?.clearLayers()
+      axios.get(`https://api.mapbox.com/isochrone/v1/mapbox/${transportMode}/${isochroneMarker.getLatLng().lng},${isochroneMarker.getLatLng().lat}?contours_minutes=${travelTime}&polygons=true&access_token=${mapboxgl.accessToken}`)
+           .then((response) => {
+            let geom = response.data.features[0].geometry;
+
+            L.geoJSON(geom, {
+              style: {
+                color: '#ff0000',
+                weight: 0.5,
+                fillOpacity: 0.5,
+                opacity: 1
+              }
+            }).bindPopup(`Tempo: ${travelTime}<br>Modalità: ${transportMode}`).addTo(areaIsochroneLayer).addTo(isochroneAreasRef.current!);
+      });
+    },[isochronePosition,travelTime,transportMode]);
+ 
 
   const loadFeatureGroupData = (key: string, url: string, urlMarkericon: string) => {
     axios.get(url)
       .then((response) => {
         response.data.forEach((item: { st_asgeojson: string, nome: string, quartiere: string }) => {
           let geojson = JSON.parse(item.st_asgeojson);
-          
+
           const markerIcon = L.icon({
             iconUrl: urlMarkericon,
             iconSize: [25, 41],
@@ -291,7 +315,7 @@ const Map: React.FC<MapProps> = ({ surveyData }) => {
     const normalizedScore = (score - minScore) / (maxScore - minScore);
     return NeighbourhoodColorScale(normalizedScore);
   };
-  
+
   return (
     <div style={{ display: 'flex' }}>
       {loading && <LoadingOverlay />} {/* Use LoadingOverlay component */}
@@ -306,6 +330,26 @@ const Map: React.FC<MapProps> = ({ surveyData }) => {
           ))}
         </ul>
         {bestQuartiere && <h2 style={{ color: '#2AFF00' }}>Miglior Quartiere: {bestQuartiere}</h2>}
+      </div>
+      {/* Select Box for Transport Mode */}
+      <div>
+        <label htmlFor="travelTimeSelect">Select travel time (minutes):</label>
+        <select id="travelTimeSelect" value={travelTime} onChange={updateTravelTime}>
+          <option value={5}>5</option>
+          <option value={10}>10</option>
+          <option value={15}>15</option>
+          <option value={20}>20</option>
+          <option value={25}>25</option>
+          <option value={30}>30</option>
+        </select>
+      </div>
+      <div>
+        <label htmlFor="travelModeSelect">Select travel mode:</label>
+        <select id="travelModeSelect" value={transportMode} onChange={updateTravelMode}>
+          <option value="walking">Walking</option>
+          <option value="driving">Driving</option>
+          <option value="cycling">Cycling</option>
+        </select>
       </div>
     </div>
   );
