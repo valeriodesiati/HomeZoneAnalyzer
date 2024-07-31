@@ -5,9 +5,9 @@ from sqlalchemy import create_engine  # Import SQLAlchemy per la connessione al 
 from libpysal.weights import KNN  # Import libpysal per calcolare i pesi spaziali con K-Nearest Neighbors
 from esda.moran import Moran  # Import Moran per calcolare l'indice di Moran
 from shapely.ops import nearest_points  # Import nearest_points per trovare i punti più vicini
-
+from flask_cors import CORS
 app = Flask(__name__)  # Crea un'istanza dell'applicazione Flask
-
+CORS(app)
 # Funzione per ottenere il motore di connessione al database
 def get_engine():
     return create_engine('postgresql+psycopg2://postgres:postgres@localhost:5432/sca')  # Crea il motore di connessione a PostgreSQL
@@ -77,10 +77,9 @@ def calculate_morans_i():
                 morans_results.append({
                     'quartiere': name,
                     'moran_I': moran.I,  # Indice di Moran
-                    'p_value': moran.p_norm  # Valore p
                 })
 
-        return jsonify(morans_results), 200  # Restituisce i risultati come JSON
+        return morans_results, 200  # Restituisce i risultati come JSON
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500  # Restituisce un errore se qualcosa va storto
