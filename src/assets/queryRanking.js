@@ -1,4 +1,5 @@
-export const GET_APARTMENTS_QUERY = `WITH poi_distances AS (
+export const GET_APARTMENTS_QUERY = `
+WITH poi_distances AS (
     -- Altri tipi di POI rimangono invariati
     SELECT a.id AS apartment_id,
            'school' AS poi_type,
@@ -60,7 +61,7 @@ export const GET_APARTMENTS_QUERY = `WITH poi_distances AS (
     GROUP BY a.id
     UNION ALL
     SELECT a.id AS apartment_id,
-           'recreation' AS poi_type,
+           'ludics' AS poi_type,
            MIN(ST_Distance(a.geometry, p.geometry)) AS distance
     FROM apartments a
     CROSS JOIN ludics p
@@ -75,6 +76,14 @@ export const GET_APARTMENTS_QUERY = `WITH poi_distances AS (
     FROM apartments a
     LEFT JOIN bus_stops p ON ST_DWithin(a.geometry, p.geometry, 300)
     GROUP BY a.id
+    UNION ALL
+    -- Aggiunta delle green_areas
+    SELECT a.id AS apartment_id,
+           'greenAreas' AS poi_type,
+           MIN(ST_Distance(a.geometry, p.geometry)) AS distance
+    FROM apartments a
+    CROSS JOIN green_areas p
+    GROUP BY a.id
 ),
 weighted_distances AS (
     SELECT
@@ -82,7 +91,7 @@ weighted_distances AS (
         pd.poi_type,
         pd.distance,
         uv.vote,
-        (pd.distance * (6 - uv.vote)) AS weighted_distance
+        ((pd.distance/1000) * (6 - uv.vote)) AS weighted_distance
     FROM poi_distances pd
     JOIN user_votes uv ON pd.poi_type = uv.poi_type
 ),
@@ -101,10 +110,13 @@ SELECT
 FROM apartments a
 JOIN apartment_scores ascore ON a.id = ascore.apartment_id
 ORDER BY ascore.total_weighted_distance ASC;
+
 `
 
 
-export const GET_NEIGHBOURHOOD_RANKING = `WITH poi_distances AS (
+export const GET_NEIGHBOURHOOD_RANKING = `
+WITH poi_distances AS (
+    -- Altri tipi di POI rimangono invariati
     SELECT a.id AS apartment_id,
            'school' AS poi_type,
            MIN(ST_Distance(a.geometry, p.geometry)) AS distance
@@ -143,8 +155,7 @@ export const GET_NEIGHBOURHOOD_RANKING = `WITH poi_distances AS (
     SELECT a.id AS apartment_id,
            'hospitals' AS poi_type,
            CASE
-               WHEN COUNT(p.id) >= 1 THEN 0
-               WHEN COUNT(p.id) = 0 THEN 3
+               WHEN COUNT(p.id) >= 1 THEN 1
                ELSE 5
            END AS distance
     FROM apartments a
@@ -166,7 +177,7 @@ export const GET_NEIGHBOURHOOD_RANKING = `WITH poi_distances AS (
     GROUP BY a.id
     UNION ALL
     SELECT a.id AS apartment_id,
-           'recreation' AS poi_type,
+           'ludics' AS poi_type,
            MIN(ST_Distance(a.geometry, p.geometry)) AS distance
     FROM apartments a
     CROSS JOIN ludics p
@@ -175,12 +186,19 @@ export const GET_NEIGHBOURHOOD_RANKING = `WITH poi_distances AS (
     SELECT a.id AS apartment_id,
            'busStops' AS poi_type,
            CASE
-               WHEN COUNT(p.id) >= 2 THEN 0
-	        WHEN COUNT(p.id) = 1 THEN 3
+               WHEN COUNT(p.id) >= 2 THEN 1
                ELSE 5
            END AS distance
     FROM apartments a
     LEFT JOIN bus_stops p ON ST_DWithin(a.geometry, p.geometry, 300)
+    GROUP BY a.id
+    UNION ALL
+    -- Aggiunta delle green_areas
+    SELECT a.id AS apartment_id,
+           'greenAreas' AS poi_type,
+           MIN(ST_Distance(a.geometry, p.geometry)) AS distance
+    FROM apartments a
+    CROSS JOIN green_areas p
     GROUP BY a.id
 ),
 weighted_distances AS (
@@ -189,7 +207,7 @@ weighted_distances AS (
         pd.poi_type,
         pd.distance,
         uv.vote,
-        (pd.distance * (6 - uv.vote)) AS weighted_distance
+        ((pd.distance/1000) * (6 - uv.vote)) AS weighted_distance
     FROM poi_distances pd
     JOIN user_votes uv ON pd.poi_type = uv.poi_type
 ),

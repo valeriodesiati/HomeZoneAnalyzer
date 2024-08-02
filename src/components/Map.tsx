@@ -56,6 +56,8 @@ const Map: React.FC<MapProps> = ({ surveyData }) => {
   const isochroneAreasRef = useRef<L.FeatureGroup<any> | null>(null);
   // variabile che tiene conto degli appartamenti trovati col tracciamento di un poligono
   const featureGroup = useRef<L.FeatureGroup<any> | null>(null);
+   // variabile che tiene conto dei quartieri 
+  const neighbourhoodGroup = useRef<L.FeatureGroup<any> | null>(null);
   // variabile per controllare il caricamento degli elementi
   const [loading, setLoading] = useState<boolean>(true);
   // variabile che tiene traccia del caricamento dei quartieri
@@ -70,6 +72,7 @@ const Map: React.FC<MapProps> = ({ surveyData }) => {
   const [isochronePosition, setIsochronePosition] = useState<L.LatLng>(latLng(44.494887, 11.3426163));
   // variabile che tiene conto degli indici di Morans
   const [moransData, setMoransData] = useState<MoranData[]>([]);
+
 
 
   
@@ -88,6 +91,10 @@ const Map: React.FC<MapProps> = ({ surveyData }) => {
     ludico: L.layerGroup(),
     fermate_Bus: L.layerGroup(),
   };
+
+  
+
+  
   // marker ISOCHRONE
   let isochroneMarker = new L.Marker(isochronePosition, { draggable: true });
   //area copribile 
@@ -128,13 +135,16 @@ const Map: React.FC<MapProps> = ({ surveyData }) => {
 
     // inzializzazione della geature group che tiene traccia di alcuni elementi renderizzabili
     drawnItemsRef.current = new L.FeatureGroup();
+
     // inizializzazione Feature group che tiene traccia dell'area raggiungibile secondo ISOCHRONE API
     isochroneAreasRef.current = new L.FeatureGroup()
     featureGroup.current = new L.FeatureGroup()
+    neighbourhoodGroup.current = new L.FeatureGroup()
     // aggiunta dei layer alla mappa
     mapRef.current.addLayer(isochroneMarker);
     mapRef.current.addLayer(drawnItemsRef.current);
     mapRef.current.addLayer(isochroneAreasRef.current)
+    mapRef.current.addLayer(neighbourhoodGroup.current)
   
     // inzializzazione menù di disegno
     const drawControl = new L.Control.Draw({
@@ -155,7 +165,7 @@ const Map: React.FC<MapProps> = ({ surveyData }) => {
 
     });
 
-    // aggiunta del menù da ddisegno  su mappa
+    // aggiunta del menù da disegno  su mappa
     mapRef.current.addControl(drawControl);
 
     mapRef.current.on(L.Draw.Event.DELETESTART,function() {
@@ -163,12 +173,14 @@ const Map: React.FC<MapProps> = ({ surveyData }) => {
     });
 
 
-
+    //gestione eventi di disegno
     mapRef.current.on(L.Draw.Event.CREATED, async (event) => {
       featureGroup.current?.clearLayers();
       featureGroup.current?.addLayer(event.layer)
+      //gestione evento quando disegno un poligono
       if(event.layer instanceof L.Polygon){
         axios
+          //invio del poligono al server per l'eleaborazione
           .post('http://localhost:8083/shape/polygon', event.layer.toGeoJSON())
           .then((response) => {
             response.data.forEach((item: { st_asgeojson: string }) => {
@@ -215,7 +227,9 @@ const Map: React.FC<MapProps> = ({ surveyData }) => {
     // creazione del layer di overlay
     const overlayMaps = {
       "Appartamenti": clusterAppartamenti.current,
-      ...poiMap
+      ...poiMap,
+      "Area Isochrone": isochroneAreasRef.current,
+      "Quartieri": neighbourhoodGroup.current
     };
     //aggiunta dell'overlay alla mappa
     L.control.layers(baseMaps, overlayMaps).addTo(mapRef.current!);
@@ -258,7 +272,7 @@ const Map: React.FC<MapProps> = ({ surveyData }) => {
               },
             });
             //aggiunta del poligono alla mappa
-            geojsonLayer.addTo(drawnItemsRef.current!);
+            geojsonLayer.addTo(neighbourhoodGroup.current!);
           });
           //quartieri caricati
           setIsQuartieriLoaded(true);
@@ -324,10 +338,6 @@ const Map: React.FC<MapProps> = ({ surveyData }) => {
   useEffect(()=>{
     axios.get('http://localhost:5000/calculate_morans_i')
        .then((response)=>{
-        
-        // setMoransData(response.data)
-        console.log(response.data)
-        
         setMoransData(response.data)
        })
   },[])
@@ -337,6 +347,63 @@ const Map: React.FC<MapProps> = ({ surveyData }) => {
     setIsochronePosition(isochroneMarker.getLatLng());
   })
 
+  function getPoiType(type: string){
+    let urlIcon;
+    switch(type){
+      case('school'):
+        urlIcon='https://www.svgrepo.com/show/398258/school.svg'
+        break
+
+      case('pharmacy'):
+        urlIcon='https://www.svgrepo.com/show/475523/pharmacy.svg'
+        break
+
+      case('hospital'):
+        urlIcon='https://www.svgrepo.com/show/500071/hospital.svg'
+        break
+
+      case('ludic'):
+        urlIcon='https://www.svgrepo.com/show/475275/star.svg'
+        break
+
+      case('sport'):
+        urlIcon='https://www.svgrepo.com/show/397373/sports.svg'
+        break
+
+      case('theater'):
+        urlIcon='https://www.svgrepo.com/show/418375/cinema-dessert-fastfood.svg'
+        break
+
+      case('library'):
+        urlIcon='https://www.svgrepo.com/show/475151/book.svg'
+        break
+
+      case('green'):
+        urlIcon='https://www.svgrepo.com/show/500085/tree.svg'
+        break
+
+      case('bus'):
+        urlIcon='https://www.svgrepo.com/show/500067/bus-stop.svg'
+        break
+
+      case('electric_station'):
+        urlIcon='https://www.svgrepo.com/show/396360/electric-plug.svg'
+        break
+
+      case('bike_rack'):
+        urlIcon='https://www.svgrepo.com/show/105391/bycicle.svg'
+        break
+
+      default:
+        urlIcon=''
+        break
+      
+
+    }
+    return urlIcon;
+  }
+
+  
   useEffect(()=>{ 
        // pulizia layer dalla vecchia area isochrone
       areaIsochroneLayer.clearLayers()
@@ -347,6 +414,30 @@ const Map: React.FC<MapProps> = ({ surveyData }) => {
            .then((response) => {
             //ottenimento geometria
             let geom = response.data.features[0].geometry;
+            
+            axios.post('http://localhost:8083/isochrone',geom).then((response=>{
+            
+              let markerIcon;
+              let urlIcon='';
+              response.data.forEach((item: { type: string; st_asgeojson: string; }) => {
+                
+                urlIcon = getPoiType(item.type);
+                markerIcon = new L.Icon({
+                  iconUrl: urlIcon,
+                  iconSize: [25, 41],
+                  iconAnchor: [12, 41],
+                  popupAnchor: [1, -34],
+                  shadowSize: [41, 41],
+                });
+                let geom = JSON.parse(item.st_asgeojson)
+                L.marker([geom.coordinates[1], geom.coordinates[0]],{icon:markerIcon})
+                  .addTo(areaIsochroneLayer)
+                    .addTo(isochroneAreasRef.current!)
+                    .bindPopup(`Tipo: ${item.type}`);
+                
+              });
+            }))
+           
             //cast in geojson della geometria
             L.geoJSON(geom, {
               style: {
@@ -414,33 +505,29 @@ const Map: React.FC<MapProps> = ({ surveyData }) => {
   const ApartmentColorScale = d3Scale.scaleLinear<string>()
     .domain([0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1])
     .range([
-      "#00ff00", // Verde
-      "#55ff00", // Verde chiaro
-      "#aaff00", // Giallo-verde
-      "#ffff00", // Giallo
-      "#ffaa00", // Giallo-arancio
-      "#ff5500", // Arancione chiaro
-      "#ff0000", // Arancione
-      "#cc0000", // Rosso-arancio
-      "#990000", // Rosso scuro
-      "#660000"  // Rosso molto scuro
+      "#00FF00", // Verde
+      "#33FF00", // Intermedio tra verde e giallo
+      "#66FF00", // Intermedio tra verde e giallo
+      "#99FF00", // Intermedio tra verde e giallo
+      "#FFFF00", // Giallo
+      "#FFCC00", // Intermedio tra giallo e arancione
+      "#FF9900", // Intermedio tra giallo e arancione
+      "#FF6600", // Intermedio tra arancione e rosso
+      "#FF3300", // Intermedio tra arancione e rosso
+      "#FF0000"  // Rosso
     ])
     .interpolate(d3Interpolate.interpolateRgb);
 
   // scala di colori interpolata dei quartieri
   const NeighbourhoodColorScale = d3Scale.scaleLinear<string>()
-  .domain([0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1])
+  .domain([0,0.2,0.4,0.6,0.8,1])
     .range([
-      "#00ff00", // Verde
-      "#55ff00", // Verde chiaro
-      "#aaff00", // Giallo-verde
-      "#ffff00", // Giallo
-      "#ffaa00", // Giallo-arancio
-      "#ff5500", // Arancione chiaro
-      "#ff0000", // Arancione
-      "#cc0000", // Rosso-arancio
-      "#990000", // Rosso scuro
-      "#660000"  // Rosso molto scuro
+      "#00FF00", // Verde
+      "#66FF00", // Intermedio tra verde e giallo
+      "#CCFF00", // Intermedio tra verde e giallo
+      "#FF9900", // Intermedio tra giallo e arancione
+      "#FF6600", // Intermedio tra arancione e rosso
+      "#FF0000"  // Rosso
     ])
   .interpolate(d3Interpolate.interpolateRgb);
 
@@ -488,6 +575,7 @@ const Map: React.FC<MapProps> = ({ surveyData }) => {
           <option value={30}>30</option>
         </select>
       </div>
+      
       <div>
         <label htmlFor="travelModeSelect">Select travel mode:</label>
         <select id="travelModeSelect" value={transportMode} onChange={updateTravelMode}>
@@ -498,6 +586,7 @@ const Map: React.FC<MapProps> = ({ surveyData }) => {
       </div>
       
       <h2>Risultati dell'indice di Moran</h2>
+      <div className='moransContainer'>
       {
         moransData.map((data, index) => (
           <p key={index}>
@@ -506,6 +595,8 @@ const Map: React.FC<MapProps> = ({ surveyData }) => {
           </p>
         ))
       }
+      </div>
+      
       </div>
     </div>
   );

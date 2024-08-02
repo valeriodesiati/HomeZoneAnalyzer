@@ -15,7 +15,8 @@ const questions = [
   { text: 'Quant\'è importante la presenza di scuole vicino a te?', poi: 'schools' },
   { text: 'Quant\'è importante la presenza di biblioteche vicino a te?', poi: 'libraries' },
   { text: 'Quant\'è importante la presenza di più di un teatro vicino a te?', poi: 'theaters' },
-  { text: 'Quant\'è importante la presenza di farmacie vicino a te?', poi: 'pharmacies' }
+  { text: 'Quant\'è importante la presenza di farmacie vicino a te?', poi: 'pharmacies' },
+  {text:'Quant\'è importante la presenza di aree ludiche vicino a te?', poi:'ludics'}
 ];
 
 const Survey: React.FC<SurveyProps> = ({ onSubmit }) => {

@@ -264,6 +264,7 @@ app.get('/quartieri',(req,res) =>{
 app.post('/shape/polygon',  (req, res) => {
 	//ricavo dati inviati da utente(geojson del poligono)
     let geojson = req.body; 
+	console.log(req.body)
 	//query per trovare appartamenti interni al poligono
 	let query= `
       SELECT ST_AsGeoJSON(es.geometry::geometry)
@@ -291,5 +292,102 @@ app.post('/shape/polygon',  (req, res) => {
 });
 
 
+
+//post request for the send polygon area 
+app.post('/isochrone',  (req, res) => {
+	//ricavo dati inviati da utente(geojson del poligono)
+    let geojson = req.body;
+
+	console.log(req.body);
+
+	let q = `WITH input_geom AS (
+    SELECT ST_SetSRID(ST_GeomFromGeoJSON('${JSON.stringify(geojson)}'), 4326) AS geometry
+),
+markers AS (
+    SELECT 'school' AS type, ST_AsGeoJSON(s.geometry::geometry) AS geometry
+    FROM schools s, input_geom ig
+    WHERE ST_Contains(ig.geometry, s.geometry::geometry)
+    
+    UNION ALL
+    
+    SELECT 'pharmacy' AS type, ST_AsGeoJSON(p.geometry::geometry) AS geometry
+    FROM pharmacies p, input_geom ig
+    WHERE ST_Contains(ig.geometry, p.geometry::geometry)
+    
+    UNION ALL
+    
+    SELECT 'hospital' AS type, ST_AsGeoJSON(h.geometry::geometry) AS geometry
+    FROM hospitals h, input_geom ig
+    WHERE ST_Contains(ig.geometry, h.geometry::geometry)
+    
+    UNION ALL
+    
+    SELECT 'ludic' AS type, ST_AsGeoJSON(l.geometry::geometry) AS geometry
+    FROM ludics l, input_geom ig
+    WHERE ST_Contains(ig.geometry, l.geometry::geometry)
+    
+    UNION ALL
+    
+    SELECT 'sport' AS type, ST_AsGeoJSON(sa.geometry::geometry) AS geometry
+    FROM sports_areas sa, input_geom ig
+    WHERE ST_Contains(ig.geometry, sa.geometry::geometry)
+    
+    UNION ALL
+    
+    SELECT 'theater' AS type, ST_AsGeoJSON(t.geometry::geometry) AS geometry
+    FROM theaters t, input_geom ig
+    WHERE ST_Contains(ig.geometry, t.geometry::geometry)
+    
+    UNION ALL
+    
+    SELECT 'library' AS type, ST_AsGeoJSON(l.geometry::geometry) AS geometry
+    FROM libraries l, input_geom ig
+    WHERE ST_Contains(ig.geometry, l.geometry::geometry)
+    
+    UNION ALL
+    
+    SELECT 'green' AS type, ST_AsGeoJSON(ga.geometry::geometry) AS geometry
+    FROM green_areas ga, input_geom ig
+    WHERE ST_Contains(ig.geometry, ga.geometry::geometry)
+    
+    UNION ALL
+    
+    SELECT 'bus' AS type, ST_AsGeoJSON(bs.geometry::geometry) AS geometry
+    FROM bus_stops bs, input_geom ig
+    WHERE ST_Contains(ig.geometry, bs.geometry::geometry)
+    
+    UNION ALL
+    
+    SELECT 'electric_station' AS type, ST_AsGeoJSON(es.geometry::geometry) AS geometry
+    FROM electric_stations es, input_geom ig
+    WHERE ST_Contains(ig.geometry, es.geometry::geometry)
+    
+    UNION ALL
+    
+    SELECT 'bike_rack' AS type, ST_AsGeoJSON(br.geometry::geometry) AS geometry
+    FROM bike_racks br, input_geom ig
+    WHERE ST_Contains(ig.geometry, br.geometry::geometry)
+)
+SELECT type, ST_AsGeoJSON(geometry::geometry)
+FROM markers;
+`
+
+
+	try {
+		//query execution
+        client.query(q, (error, results) => {
+		if (error) {
+			console.error('Errore durante l\'esecuzione della query:', error);
+		} else {
+			console.log("query effettutata con successo");
+			res.send(results.rows)
+		}
+	  });
+	}
+	catch (err) {
+		console.error('Errore durante il confronto delle geometrie:', err);
+		res.status(500).json({ error: 'Errore durante il confronto delle geometrie' });
+	}
+});
 
 
