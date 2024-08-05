@@ -336,7 +336,7 @@ const Map: React.FC<MapProps> = ({ surveyData }) => {
   }, [surveyData]);
 
   useEffect(()=>{
-    axios.get('http://localhost:5000/calculate_morans_i')
+    axios.get('http://localhost:80/calculate_morans_i')
        .then((response)=>{
         setMoransData(response.data)
        })
@@ -367,7 +367,7 @@ const Map: React.FC<MapProps> = ({ surveyData }) => {
         break
 
       case('sport'):
-        urlIcon='https://www.svgrepo.com/show/397373/sports.svg'
+        urlIcon='https://www.svgrepo.com/show/475554/gym.svg'
         break
 
       case('theater'):
@@ -375,7 +375,7 @@ const Map: React.FC<MapProps> = ({ surveyData }) => {
         break
 
       case('library'):
-        urlIcon='https://www.svgrepo.com/show/475151/book.svg'
+        urlIcon='https://www.svgrepo.com/show/395907/books.svg'
         break
 
       case('green'):
@@ -485,9 +485,9 @@ const Map: React.FC<MapProps> = ({ surveyData }) => {
   const loadPoI = () => {
     loadFeatureGroupData('aree_verdi', 'http://localhost:8083/aree_verdi', 'https://www.svgrepo.com/show/500085/tree.svg');
     loadFeatureGroupData('scuole', 'http://localhost:8083/scuole', 'https://www.svgrepo.com/show/398258/school.svg');
-    loadFeatureGroupData('sport', 'http://localhost:8083/sport', 'https://www.svgrepo.com/show/397373/sports.svg');
+    loadFeatureGroupData('sport', 'http://localhost:8083/sport', 'https://www.svgrepo.com/show/475554/gym.svg');
     loadFeatureGroupData('farmacie', 'http://localhost:8083/farmacie', 'https://www.svgrepo.com/show/475523/pharmacy.svg');
-    loadFeatureGroupData('biblioteche', 'http://localhost:8083/biblioteche', 'https://www.svgrepo.com/show/475151/book.svg');
+    loadFeatureGroupData('biblioteche', 'http://localhost:8083/biblioteche', 'https://www.svgrepo.com/show/395907/books.svg');
     loadFeatureGroupData('ospedali', 'http://localhost:8083/ospedali', 'https://www.svgrepo.com/show/500071/hospital.svg');
     loadFeatureGroupData('biciclette', 'http://localhost:8083/biciclette', 'https://www.svgrepo.com/show/105391/bycicle.svg');
     loadFeatureGroupData('teatri_Cinema', 'http://localhost:8083/teatri_Cinema', 'https://www.svgrepo.com/show/418375/cinema-dessert-fastfood.svg');

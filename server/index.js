@@ -2,7 +2,7 @@ import express from 'express';
 const app = express();
 import cors from 'cors';
 import pg from 'pg'
-import {GET_APARTMENTS_QUERY,GET_NEIGHBOURHOOD_RANKING} from '../src/assets/queryRanking.js'
+import {GET_APARTMENTS_QUERY,GET_NEIGHBOURHOOD_RANKING} from './queryRanking.js'
 
 
 //allow CORS-policy

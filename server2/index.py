@@ -10,7 +10,7 @@ app = Flask(__name__)  # Crea un'istanza dell'applicazione Flask
 CORS(app)
 # Funzione per ottenere il motore di connessione al database
 def get_engine():
-    return create_engine('postgresql+psycopg2://postgres:postgres@localhost:5432/sca')  # Crea il motore di connessione a PostgreSQL
+    return create_engine('postgresql+psycopg2://postgres:postgres@locahost:5432/sca')  # Crea il motore di connessione a PostgreSQL
 
 # Funzione per caricare i dati dal database
 def load_data():
