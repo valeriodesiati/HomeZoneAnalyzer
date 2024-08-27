@@ -91,7 +91,7 @@ weighted_distances AS (
         pd.poi_type,
         pd.distance,
         uv.vote,
-        ((pd.distance/1000) * (6 - uv.vote)) AS weighted_distance
+        ((pd.distance/1000) * (uv.vote)) AS weighted_distance
     FROM poi_distances pd
     JOIN user_votes uv ON pd.poi_type = uv.poi_type
 ),
@@ -106,6 +106,8 @@ SELECT
     a.id AS code,
     ST_AsGeoJSON(a.geometry::geometry) AS geometry,
     a.prezzo,
+    a.quartiere,
+    a.indirizzo,
     ascore.total_weighted_distance AS score
 FROM apartments a
 JOIN apartment_scores ascore ON a.id = ascore.apartment_id
@@ -207,7 +209,7 @@ weighted_distances AS (
         pd.poi_type,
         pd.distance,
         uv.vote,
-        ((pd.distance/1000) * (6 - uv.vote)) AS weighted_distance
+        ((pd.distance/1000) * (uv.vote)) AS weighted_distance
     FROM poi_distances pd
     JOIN user_votes uv ON pd.poi_type = uv.poi_type
 ),

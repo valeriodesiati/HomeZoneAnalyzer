@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: react-app-service
+  labels:
+    app: react-app
+spec:
+  selector:
+    app: react-app
+  ports:
+    - protocol: TCP
+      port: 80  # Porta esposta dal service
+      targetPort: 80  # Porta del container
+  type: NodePort  # Puoi cambiare a LoadBalancer o NodePort in base alle esigenze

@@ -1,6 +1,8 @@
 // LoadingScreen.tsx
 import React from 'react';
 import '../css/StartingLoading.css'
+
+//componente che rappresenta lo spinner di caricamento mentre si attende il caricamento del sondaggio
 const StartingLoading: React.FC = () => {
   return (
     <div className="loaderContainer2">

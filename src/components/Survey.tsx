@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import '../css/Survey.css';
 
+//interfaccia props da comunicare tra Map e Survey
 interface SurveyProps {
   onSubmit: (responses: Map<string, number>) => void;
 }
 
+//lista domande per ogni tipo di PoI
 const questions = [
   { text: 'Quanto è importante la presenza di aree verdi nel vicinato?', poi: 'greenAreas' },
   { text: 'Quant\'è importante che ci siano almeno 2 fermate del bus vicino a te?', poi: 'busStops' },
@@ -19,16 +21,18 @@ const questions = [
   {text:'Quant\'è importante la presenza di aree ludiche vicino a te?', poi:'ludics'}
 ];
 
+
+
 const Survey: React.FC<SurveyProps> = ({ onSubmit }) => {
   const initialResponses = new Map(questions.map(question => [question.poi, 0]));
   const [responses, setResponses] = useState<Map<string, number>>(initialResponses);
-
+  //assegnamento valore quando premo un bottone con l'interesse per  ogni PoI
   const handleChange = (poi: string, value: number) => {
     const newResponses = new Map(responses);
     newResponses.set(poi, value);
     setResponses(newResponses);
   };
-
+  // invio risposta al componente Map
   const handleSubmit = () => {
     onSubmit(responses);
   };

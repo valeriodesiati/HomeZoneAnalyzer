@@ -16,19 +16,32 @@ def get_engine():
 def load_data():
     engine = get_engine()  # Ottiene il motore di connessione al database
     queries = {
-        'apartments': 'SELECT prezzo, geometry::geometry FROM apartments',  # Query per caricare gli appartamenti
-        'neighborhoods': 'SELECT cod_quar, quartiere, geometry::geometry FROM neighborhoods',  # Query per caricare i quartieri
-        'schools': 'SELECT geometry::geometry FROM schools',  # Query per caricare le scuole
-        'hospitals': 'SELECT geometry::geometry FROM hospitals',  # Query per caricare gli ospedali
-        'pharmacies': 'SELECT geometry::geometry FROM pharmacies',  # Query per caricare le farmacie
-        'sports_areas': 'SELECT geometry::geometry FROM sports_areas',  # Query per caricare le aree sportive
-        'green_areas': 'SELECT geometry::geometry FROM green_areas',  # Query per caricare le aree verdi
-        'libraries': 'SELECT geometry::geometry FROM libraries',  # Query per caricare le biblioteche
-        'bus_stops': 'SELECT geometry::geometry FROM bus_stops',  # Query per caricare le fermate degli autobus
-        'bike_racks': 'SELECT geometry::geometry FROM bike_racks',  # Query per caricare i portabiciclette
-        'electric_stations': 'SELECT geometry::geometry FROM electric_stations',  # Query per caricare le stazioni elettriche
-        'theaters': 'SELECT geometry::geometry FROM theaters',  # Query per caricare i teatri
-        'ludics': 'SELECT geometry::geometry FROM ludics',  # Query per caricare le aree ludiche
+        # Query per caricare gli appartamenti
+        'apartments': 'SELECT prezzo, geometry::geometry FROM apartments',  
+        # Query per caricare i quartieri
+        'neighborhoods': 'SELECT cod_quar, quartiere, geometry::geometry FROM neighborhoods',  
+        # Query per caricare le scuole
+        'schools': 'SELECT geometry::geometry FROM schools', 
+         # Query per caricare gli ospedali 
+        'hospitals': 'SELECT geometry::geometry FROM hospitals', 
+        # Query per caricare le farmacie
+        'pharmacies': 'SELECT geometry::geometry FROM pharmacies',  
+        # Query per caricare le aree sportive
+        'sports_areas': 'SELECT geometry::geometry FROM sports_areas',  
+         # Query per caricare le aree verdi
+        'green_areas': 'SELECT geometry::geometry FROM green_areas', 
+        # Query per caricare le biblioteche
+        'libraries': 'SELECT geometry::geometry FROM libraries', 
+        # Query per caricare le fermate degli autobus 
+        'bus_stops': 'SELECT geometry::geometry FROM bus_stops',
+        # Query per caricare i portabiciclette
+        'bike_racks': 'SELECT geometry::geometry FROM bike_racks',  
+        # Query per caricare le stazioni elettriche 
+        'electric_stations': 'SELECT geometry::geometry FROM electric_stations',
+        # Query per caricare i teatri
+        'theaters': 'SELECT geometry::geometry FROM theaters',  
+        # Query per caricare le aree ludiche
+        'ludics': 'SELECT geometry::geometry FROM ludics',  
     }
     
     data = {}  # Dizionario per memorizzare i dati caricati
@@ -95,7 +108,8 @@ def check_connection():
     except Exception as e:
         return jsonify({'error': 'Failed to connect to the database', 'details': str(e)}), 500  # Restituisce un errore se la connessione fallisce
 
-# ,
+
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0',debug=True)  # Avvia l'applicazione Flask su porta 5000 in modalità debug
+    # Avvia l'applicazione Flask
+    app.run(host='0.0.0.0',debug=True,port=5000)

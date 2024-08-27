@@ -42,9 +42,9 @@ interface MoranData {
 // marker per isochrone API
 const Map: React.FC<MapProps> = ({ surveyData }) => {
 
-  // mappa
+  // mappa geografica da renderizzare
   const mapRef = useRef<L.Map | null>(null);
-  // centro di Bologna
+  // coordinate centro di Bologna
   const [center] = useState<[number, number]>([44.494887, 11.3426]);
   // variabile del miglior quartiere
   const [bestQuartiere, setBestQuartiere] = useState<string>('');
@@ -183,7 +183,7 @@ const Map: React.FC<MapProps> = ({ surveyData }) => {
           //invio del poligono al server per l'eleaborazione
           .post('http://localhost:8083/shape/polygon', event.layer.toGeoJSON())
           .then((response) => {
-            response.data.forEach((item: { st_asgeojson: string }) => {
+            response.data.forEach((item: { st_asgeojson: string,prezzo:number,quartiere:string,indirizzo:string }) => {
               let geojson = JSON.parse(item.st_asgeojson);
               const markerIcon = L.icon({
                 iconUrl: `https://www.svgrepo.com/show/187213/apartment.svg`,
@@ -192,7 +192,10 @@ const Map: React.FC<MapProps> = ({ surveyData }) => {
                 popupAnchor: [1, -34],
                 shadowSize: [41, 41],
               });
-              featureGroup.current!.addLayer(L.marker([geojson.coordinates[1], geojson.coordinates[0]], { icon: markerIcon }));
+              featureGroup
+                .current!
+                  .addLayer(L.marker([geojson.coordinates[1], geojson.coordinates[0]], { icon: markerIcon })
+                    .bindPopup(`Prezzo: ${item.prezzo}<br>Quartiere: ${item.quartiere}<br>Indirizzo:   ${item.indirizzo}`));
             });
           })
           .catch((error) => {
@@ -241,6 +244,9 @@ const Map: React.FC<MapProps> = ({ surveyData }) => {
     };
   }, [center]);
 
+
+
+  //hook per caricamento dei quartieri
   useEffect(() => {
     // controllo se i quartieri sono stati caricati
     if (!isQuartieriLoaded) {
@@ -287,7 +293,7 @@ const Map: React.FC<MapProps> = ({ surveyData }) => {
 
   
   
-
+  // hook per caricamento degli appartamenti
   useEffect(() => {
     // Fcontrollo se quartieri sono stati caricati
     if (!isApartmentsLoaded && isQuartieriLoaded) {
@@ -299,7 +305,7 @@ const Map: React.FC<MapProps> = ({ surveyData }) => {
           //punteggio massimo
           const maxScore = Math.max(...apartments.data.map((item: any) => item.score));
 
-          apartments.data.forEach((item: { geometry: string, prezzo: string, score: number, code: number }) => {
+          apartments.data.forEach((item: { geometry: string, prezzo: string, score: number, code: number,quartiere: string, indirizzo: string }) => {
             // parsing in json della geometria
             const geojson = JSON.parse(item.geometry);
             // assegnamento colore in base al punteggio
@@ -314,7 +320,7 @@ const Map: React.FC<MapProps> = ({ surveyData }) => {
             });
             //creazione popup
             L.marker([geojson.coordinates[1], geojson.coordinates[0]], { icon: markerIcon })
-              .bindPopup(`Prezzo: ${item.prezzo}<br>Score: ${item.score}`)
+              .bindPopup(`Prezzo: ${item.prezzo}<br>Punteggio: ${item.score}<br>Quartiere: ${item.quartiere}<br>Indirizzo: ${item.indirizzo}`)
               .addTo(clusterAppartamenti.current!);
           });
           //aggiunta al cluster
@@ -335,8 +341,9 @@ const Map: React.FC<MapProps> = ({ surveyData }) => {
     axios.post('http://localhost:8083/', Object.fromEntries(surveyData));
   }, [surveyData]);
 
+  // hook per il calcolo degli indici di moran suddivisi per quartiere
   useEffect(()=>{
-    axios.get('http://localhost:80/calculate_morans_i')
+    axios.get('http://localhost:5000/calculate_morans_i')
        .then((response)=>{
         setMoransData(response.data)
        })
@@ -347,9 +354,11 @@ const Map: React.FC<MapProps> = ({ surveyData }) => {
     setIsochronePosition(isochroneMarker.getLatLng());
   })
 
+  //assegnamento icona svg ai amrker dell'area isochrone in base al tipo
   function getPoiType(type: string){
     let urlIcon;
     switch(type){
+
       case('school'):
         urlIcon='https://www.svgrepo.com/show/398258/school.svg'
         break
@@ -403,7 +412,7 @@ const Map: React.FC<MapProps> = ({ surveyData }) => {
     return urlIcon;
   }
 
-  
+  // hook per il rendering dell'area isochrone
   useEffect(()=>{ 
        // pulizia layer dalla vecchia area isochrone
       areaIsochroneLayer.clearLayers()
@@ -414,13 +423,13 @@ const Map: React.FC<MapProps> = ({ surveyData }) => {
            .then((response) => {
             //ottenimento geometria
             let geom = response.data.features[0].geometry;
-            
+            //invio area al server che gestisce il fetch dei vari marker dei PoI interni all'area
             axios.post('http://localhost:8083/isochrone',geom).then((response=>{
             
               let markerIcon;
               let urlIcon='';
-              response.data.forEach((item: { type: string; st_asgeojson: string; }) => {
-                
+              response.data.forEach((item: { type: string; st_asgeojson: string; info:string }) => {
+                //ottenimento dell'icona svg
                 urlIcon = getPoiType(item.type);
                 markerIcon = new L.Icon({
                   iconUrl: urlIcon,
@@ -433,15 +442,15 @@ const Map: React.FC<MapProps> = ({ surveyData }) => {
                 L.marker([geom.coordinates[1], geom.coordinates[0]],{icon:markerIcon})
                   .addTo(areaIsochroneLayer)
                     .addTo(isochroneAreasRef.current!)
-                    .bindPopup(`Tipo: ${item.type}`);
-                
+                    .bindPopup(`Info: ${item.info}`);
+              
               });
             }))
            
             //cast in geojson della geometria
             L.geoJSON(geom, {
               style: {
-                color: '#ff0000',
+                color: 'purple',
                 weight: 0.5,
                 fillOpacity: 0.5,
                 opacity: 1
@@ -461,7 +470,7 @@ const Map: React.FC<MapProps> = ({ surveyData }) => {
     axios.get(url)
       .then((response) => {
         //per ogni elemento ottenuto di quella categoria ciclo
-        response.data.forEach((item: { st_asgeojson: string, nome: string, quartiere: string }) => {
+        response.data.forEach((item: { st_asgeojson: string, nome: string, quartiere: string, tipologia:string }) => {
           //parsing json dell'oggetto
           let geojson = JSON.parse(item.st_asgeojson);
           //creazione marker
@@ -472,8 +481,13 @@ const Map: React.FC<MapProps> = ({ surveyData }) => {
             popupAnchor: [1, -34],
             shadowSize: [41, 41],
           });
-          //aggiunta del marker alla struttura dati mappa
-          L.marker([geojson.coordinates[1], geojson.coordinates[0]], { icon: markerIcon }).addTo(poiMap[key]);
+          if(item.tipologia!=undefined)
+            L.marker([geojson.coordinates[1], geojson.coordinates[0]], { icon: markerIcon }).bindPopup(`<b>tipo:</b> ${item.tipologia} <br>
+              <b>nome:</b> ${item.nome}`).addTo(poiMap[key])
+          else if(item.nome != undefined)
+            L.marker([geojson.coordinates[1], geojson.coordinates[0]], { icon: markerIcon }).bindPopup(`<b>nome:</b> ${item.nome}`).addTo(poiMap[key])                                                                                                
+          else//aggiunta del marker alla struttura dati mappa
+            L.marker([geojson.coordinates[1], geojson.coordinates[0]], { icon: markerIcon }).addTo(poiMap[key]);
         });
       })
       .catch((error) => {
@@ -514,7 +528,8 @@ const Map: React.FC<MapProps> = ({ surveyData }) => {
       "#FF9900", // Intermedio tra giallo e arancione
       "#FF6600", // Intermedio tra arancione e rosso
       "#FF3300", // Intermedio tra arancione e rosso
-      "#FF0000"  // Rosso
+      "#FF0000", // Rosso
+      "#5F021F"  // rosso bordeaux
     ])
     .interpolate(d3Interpolate.interpolateRgb);
 

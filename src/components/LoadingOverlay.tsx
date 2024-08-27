@@ -1,6 +1,7 @@
 import React from 'react';
 import '../css/LoadingOverlay.css'
 
+// spinner di caricamento una volta completato il sondaggio dopo il quale si attende la renderizzazione della mappa con tutti gli elementi richiesti.
 const LoadingOverlay: React.FC = () => {
   return (
     <div className='containerOverlay'>
