@@ -32,7 +32,7 @@ RUN npm install
 COPY . .
 
 # Espone la porta su cui gira la tua applicazione (assicurati che la tua app ascolti su questa porta)
-EXPOSE 5173
+EXPOSE 8083
 
 # Comando per avviare la tua applicazione
 CMD ["node", "index.js"]

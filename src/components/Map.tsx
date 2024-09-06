@@ -33,9 +33,9 @@ interface MapProps {
   surveyData: Map<string, number>;
 }
 interface MoranData {
-  quartiere: string;
   moran_I: number;
   p_value: number;
+  z_score: number;
 }
 
 
@@ -71,7 +71,7 @@ const Map: React.FC<MapProps> = ({ surveyData }) => {
   // variabile che tiene conto del marker di ISOCHRONE API
   const [isochronePosition, setIsochronePosition] = useState<L.LatLng>(latLng(44.494887, 11.3426163));
   // variabile che tiene conto degli indici di Morans
-  const [moransData, setMoransData] = useState<MoranData[]>([]);
+  const [moransData, setMoransData] = useState<MoranData>();
 
 
 
@@ -481,7 +481,7 @@ const Map: React.FC<MapProps> = ({ surveyData }) => {
             popupAnchor: [1, -34],
             shadowSize: [41, 41],
           });
-          if(item.tipologia!=undefined)
+          if(item.tipologia != undefined)
             L.marker([geojson.coordinates[1], geojson.coordinates[0]], { icon: markerIcon }).bindPopup(`<b>tipo:</b> ${item.tipologia} <br>
               <b>nome:</b> ${item.nome}`).addTo(poiMap[key])
           else if(item.nome != undefined)
@@ -602,14 +602,16 @@ const Map: React.FC<MapProps> = ({ surveyData }) => {
       
       <h2>Risultati dell'indice di Moran</h2>
       <div className='moransContainer'>
-      {
-        moransData.map((data, index) => (
-          <p key={index}>
-            Quartiere: {data.quartiere}<br></br>
-            Moran's I: {data.moran_I.toFixed(2)}<br></br>
+      
+          <h2>Morans'I Computation:</h2>
+          <p>
+            <br></br>
+            Moran's I: {moransData?.moran_I}<br/>
+            Statistical Significance: {moransData?.p_value}<br/>
+            Spatial Causality Hypotheses: {moransData?.z_score}<br/>
           </p>
-        ))
-      }
+        
+      
       </div>
       
       </div>

@@ -6,8 +6,6 @@ import {GET_APARTMENTS_QUERY,GET_NEIGHBOURHOOD_RANKING} from './queryRanking.js'
 
 
 
-export let a=0;
-
 //allow CORS-policy
 app.use(cors())
 
@@ -219,7 +217,7 @@ app.get('/colonnine_Elettriche', (req, res) => {
 
   //end point zone ludiche
   app.get('/ludico', (req, res) => {
-	let query=`SELECT ST_AsGeoJSON(es.geometry::geometry)
+	let query=`SELECT ST_AsGeoJSON(es.geometry::geometry),es.nome
 				 FROM ludics es;`
 			   
 	client.query(query, (error, results) => {
@@ -233,7 +231,7 @@ app.get('/colonnine_Elettriche', (req, res) => {
   })
   //end point fermate bus
   app.get('/fermate_Bus', (req, res) => {
-	let query=`SELECT ST_AsGeoJSON(es.geometry::geometry)
+	let query=`SELECT ST_AsGeoJSON(es.geometry::geometry),es.nome
 				 FROM bus_stops es`
 			   
 	client.query(query, (error, results) => {
@@ -325,7 +323,7 @@ markers AS (
     
     UNION ALL
     
-    SELECT 'ludic' AS type, ST_AsGeoJSON(l.geometry::geometry) AS geometry,l.id::text as info
+    SELECT 'ludic' AS type, ST_AsGeoJSON(l.geometry::geometry) AS geometry,l.nome as info
     FROM ludics l, input_geom ig
     WHERE ST_Contains(ig.geometry, l.geometry::geometry)
     

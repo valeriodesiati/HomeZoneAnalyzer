@@ -9,11 +9,11 @@ interface SurveyProps {
 //lista domande per ogni tipo di PoI
 const questions = [
   { text: 'Quanto è importante la presenza di aree verdi nel vicinato?', poi: 'greenAreas' },
-  { text: 'Quant\'è importante che ci siano almeno 2 fermate del bus vicino a te?', poi: 'busStops' },
+  { text: 'Quant\'è importante che ci siano almeno 2 fermate del bus entro 300 metri di distanza?', poi: 'busStops' },
   { text: 'Quant\'è importante la presenza di aree sportive pubbliche vicino a te?', poi: 'sportsAreas' },
   { text: 'Quant\'è importante la presenza di rastrelliere di biciclette vicino a te?', poi: 'bikeRacks' },
-  { text: 'Quant\'è importante la presenza di parcheggi per veicoli elettrici?', poi: 'electricStations' },
-  { text: 'Quant\'è importante la presenza di almeno 1 struttura sanitaria privata vicino a te?', poi: 'hospitals' },
+  { text: 'Quant\'è importante la presenza di parcheggi per veicoli elettrici vicino a te?', poi: 'electricStations' },
+  { text: 'Quant\'è importante la presenza di almeno 1 struttura sanitaria privata entro 1 km di distanza?', poi: 'hospitals' },
   { text: 'Quant\'è importante la presenza di scuole vicino a te?', poi: 'schools' },
   { text: 'Quant\'è importante la presenza di biblioteche vicino a te?', poi: 'libraries' },
   { text: 'Quant\'è importante la presenza di più di un teatro vicino a te?', poi: 'theaters' },
