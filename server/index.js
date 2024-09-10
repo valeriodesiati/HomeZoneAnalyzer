@@ -24,7 +24,7 @@ var client = new pg.Client({
 //db connection
 client.connect().then(() => {
 		console.log('Connected to PostgreSQL database');
-       
+        
 	})
 	.catch((err) => {
 		console.error('Error connecting to PostgreSQL database\n', err);
