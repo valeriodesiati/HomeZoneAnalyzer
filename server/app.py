@@ -8,6 +8,7 @@ from shapely.ops import nearest_points  # Import nearest_points per trovare i pu
 from flask_cors import CORS
 
 app = Flask(__name__)  # Crea un'istanza dell'applicazione Flask
+#autorizzazione risorse esterne CORS policy.
 CORS(app)
 
 # Funzione per ottenere il motore di connessione al database
@@ -57,7 +58,7 @@ def calculate_morans_i():
         # Unisce i dati di tutti i punti di interesse in un unico GeoDataFrame
         points_gdf = gpd.GeoDataFrame(pd.concat([data['schools'], data['hospitals'], data['pharmacies'], data['sports_areas'], data['green_areas'], data['libraries'], data['bus_stops'], data['bike_racks'], data['electric_stations'], data['theaters'], data['ludics']], ignore_index=True), geometry='geometry')
 
-        # Verifica che i dati abbiano geometrie
+        # Verifica che i dati abbiano non siano inesistenti
         if apartments_df.empty or neighborhoods_df.empty:
             return jsonify({'error': 'One or more required data tables are empty'}), 500  # Restituisce un errore se i dati sono vuoti
 

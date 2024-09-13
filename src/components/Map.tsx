@@ -32,6 +32,7 @@ mapboxgl.accessToken = 'pk.eyJ1IjoiZXNzZWVlZWVlZWVlZWVlZSIsImEiOiJjbHR0dDRpd2QwY
 interface MapProps {
   surveyData: Map<string, number>;
 }
+//interfaccia per i dati di calcolo dell'indice I di Moran
 interface MoranData {
   moran_I: number;
   p_value: number;
@@ -168,6 +169,7 @@ const Map: React.FC<MapProps> = ({ surveyData }) => {
     // aggiunta del menù da disegno  su mappa
     mapRef.current.addControl(drawControl);
 
+    //listener che permette di eliminare il poligono di area di ricerca di appartamenti
     mapRef.current.on(L.Draw.Event.DELETESTART,function() {
       featureGroup.current?.clearLayers()
     });
@@ -181,7 +183,7 @@ const Map: React.FC<MapProps> = ({ surveyData }) => {
       if(event.layer instanceof L.Polygon){
         axios
           //invio del poligono al server per l'eleaborazione
-          .post('http://localhost:8083/shape/polygon', event.layer.toGeoJSON())
+          .post('http://localhost:31527/shape/polygon', event.layer.toGeoJSON())
           .then((response) => {
             response.data.forEach((item: { st_asgeojson: string,prezzo:number,quartiere:string,indirizzo:string }) => {
               let geojson = JSON.parse(item.st_asgeojson);
@@ -253,7 +255,7 @@ const Map: React.FC<MapProps> = ({ surveyData }) => {
       setLoading(true);
 
       //chiamata get per recuperare i quartieri
-      axios.get('http://localhost:8083/quartieri')
+      axios.get('http://localhost:31527/quartieri')
         .then((quartieri) => {
           //punteggio minimo
           const minScore = Math.min(...quartieri.data.map((item: any) => item.score));
@@ -298,7 +300,7 @@ const Map: React.FC<MapProps> = ({ surveyData }) => {
     // Fcontrollo se quartieri sono stati caricati
     if (!isApartmentsLoaded && isQuartieriLoaded) {
       //chiamata get per recuperare i quartieri
-      axios.get('http://localhost:8083/apartments')
+      axios.get('http://localhost:31527/apartments')
         .then((apartments) => {
           //punteggio minimo
           const minScore = Math.min(...apartments.data.map((item: any) => item.score));
@@ -325,7 +327,7 @@ const Map: React.FC<MapProps> = ({ surveyData }) => {
           });
           //aggiunta al cluster
           clusterAppartamenti.current!.addTo(drawnItemsRef.current!);
-
+          // gli appartamenti sono stati caricati 
           setIsApartmentsLoaded(true);
           if (isQuartieriLoaded) setLoading(false);
         })
@@ -338,12 +340,12 @@ const Map: React.FC<MapProps> = ({ surveyData }) => {
 
   //invio voti sondaggio
   useEffect(() => {
-    axios.post('http://localhost:8083/', Object.fromEntries(surveyData));
+    axios.post('http://localhost:31527/', Object.fromEntries(surveyData));
   }, [surveyData]);
 
   // hook per il calcolo degli indici di moran suddivisi per quartiere
   useEffect(()=>{
-    axios.get('http://localhost:5000/calculate_morans_i')
+    axios.get('http://localhost:32499/calculate_morans_i')
        .then((response)=>{
         setMoransData(response.data)
        })
@@ -357,6 +359,7 @@ const Map: React.FC<MapProps> = ({ surveyData }) => {
   //assegnamento icona svg ai amrker dell'area isochrone in base al tipo
   function getPoiType(type: string){
     let urlIcon;
+    //a seconda del tipo asssegno un'icona diversa
     switch(type){
 
       case('school'):
@@ -418,18 +421,18 @@ const Map: React.FC<MapProps> = ({ surveyData }) => {
       areaIsochroneLayer.clearLayers()
       // pulizia della variabile dei layers
       isochroneAreasRef.current?.clearLayers()
-      //chiamata ad ISOCHRONE API
+      // chiamata ad ISOCHRONE API di mapbox, restituisce un poligono
       axios.get(`https://api.mapbox.com/isochrone/v1/mapbox/${transportMode}/${isochroneMarker.getLatLng().lng},${isochroneMarker.getLatLng().lat}?contours_minutes=${travelTime}&polygons=true&access_token=${mapboxgl.accessToken}`)
            .then((response) => {
-            //ottenimento geometria
+            // ottenimento poligono
             let geom = response.data.features[0].geometry;
-            //invio area al server che gestisce il fetch dei vari marker dei PoI interni all'area
-            axios.post('http://localhost:8083/isochrone',geom).then((response=>{
+            //invio del poligono al mio server che gestisce il fetch dei vari marker dei PoI interni ad esso
+            axios.post('http://localhost:31527/isochrone',geom).then((response=>{
             
               let markerIcon;
               let urlIcon='';
               response.data.forEach((item: { type: string; st_asgeojson: string; info:string }) => {
-                //ottenimento dell'icona svg
+                // ottenimento dell'icona svg
                 urlIcon = getPoiType(item.type);
                 markerIcon = new L.Icon({
                   iconUrl: urlIcon,
@@ -447,7 +450,7 @@ const Map: React.FC<MapProps> = ({ surveyData }) => {
               });
             }))
            
-            //cast in geojson della geometria
+            //cast in geojson del poligono
             L.geoJSON(geom, {
               style: {
                 color: 'purple',
@@ -497,17 +500,17 @@ const Map: React.FC<MapProps> = ({ surveyData }) => {
 
   //funzione che effettua le chiamate per ricavare i punti di interesse suddivisi per tipologia
   const loadPoI = () => {
-    loadFeatureGroupData('aree_verdi', 'http://localhost:8083/aree_verdi', 'https://www.svgrepo.com/show/500085/tree.svg');
-    loadFeatureGroupData('scuole', 'http://localhost:8083/scuole', 'https://www.svgrepo.com/show/398258/school.svg');
-    loadFeatureGroupData('sport', 'http://localhost:8083/sport', 'https://www.svgrepo.com/show/475554/gym.svg');
-    loadFeatureGroupData('farmacie', 'http://localhost:8083/farmacie', 'https://www.svgrepo.com/show/475523/pharmacy.svg');
-    loadFeatureGroupData('biblioteche', 'http://localhost:8083/biblioteche', 'https://www.svgrepo.com/show/395907/books.svg');
-    loadFeatureGroupData('ospedali', 'http://localhost:8083/ospedali', 'https://www.svgrepo.com/show/500071/hospital.svg');
-    loadFeatureGroupData('biciclette', 'http://localhost:8083/biciclette', 'https://www.svgrepo.com/show/105391/bycicle.svg');
-    loadFeatureGroupData('teatri_Cinema', 'http://localhost:8083/teatri_Cinema', 'https://www.svgrepo.com/show/418375/cinema-dessert-fastfood.svg');
-    loadFeatureGroupData('ludico', 'http://localhost:8083/ludico', 'https://www.svgrepo.com/show/475275/star.svg');
-    loadFeatureGroupData('colonnine_Elettriche', 'http://localhost:8083/colonnine_Elettriche', 'https://www.svgrepo.com/show/396360/electric-plug.svg');
-    loadFeatureGroupData('fermate_Bus', 'http://localhost:8083/fermate_Bus', 'https://www.svgrepo.com/show/500067/bus-stop.svg');
+    loadFeatureGroupData('aree_verdi', 'http://localhost:31527/aree_verdi', 'https://www.svgrepo.com/show/500085/tree.svg');
+    loadFeatureGroupData('scuole', 'http://localhost:31527/scuole', 'https://www.svgrepo.com/show/398258/school.svg');
+    loadFeatureGroupData('sport', 'http://localhost:31527/sport', 'https://www.svgrepo.com/show/475554/gym.svg');
+    loadFeatureGroupData('farmacie', 'http://localhost:31527/farmacie', 'https://www.svgrepo.com/show/475523/pharmacy.svg');
+    loadFeatureGroupData('biblioteche', 'http://localhost:31527/biblioteche', 'https://www.svgrepo.com/show/395907/books.svg');
+    loadFeatureGroupData('ospedali', 'http://localhost:31527/ospedali', 'https://www.svgrepo.com/show/500071/hospital.svg');
+    loadFeatureGroupData('biciclette', 'http://localhost:31527/biciclette', 'https://www.svgrepo.com/show/105391/bycicle.svg');
+    loadFeatureGroupData('teatri_Cinema', 'http://localhost:31527/teatri_Cinema', 'https://www.svgrepo.com/show/418375/cinema-dessert-fastfood.svg');
+    loadFeatureGroupData('ludico', 'http://localhost:31527/ludico', 'https://www.svgrepo.com/show/475275/star.svg');
+    loadFeatureGroupData('colonnine_Elettriche', 'http://localhost:31527/colonnine_Elettriche', 'https://www.svgrepo.com/show/396360/electric-plug.svg');
+    loadFeatureGroupData('fermate_Bus', 'http://localhost:31527/fermate_Bus', 'https://www.svgrepo.com/show/500067/bus-stop.svg');
   };
 
   // esecuzione del fetching dei punti di interesse
@@ -610,10 +613,7 @@ const Map: React.FC<MapProps> = ({ surveyData }) => {
             Statistical Significance: {moransData?.p_value}<br/>
             Spatial Causality Hypotheses: {moransData?.z_score}<br/>
           </p>
-        
-      
       </div>
-      
       </div>
     </div>
   );

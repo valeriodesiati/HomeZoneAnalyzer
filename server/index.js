@@ -294,13 +294,13 @@ app.post('/shape/polygon',  (req, res) => {
 
 
 
-//post request for the send polygon area 
+// post request for the send polygon area 
 app.post('/isochrone',  (req, res) => {
-	//ricavo dati inviati da utente(geojson del poligono)
+	// ricavo dati inviati da utente(geojson del poligono)
     let geojson = req.body;
 
 	console.log(req.body);
-
+	// query attua a ricavare i PoI interni al poligono inviato
 	let q = `WITH input_geom AS (
     SELECT ST_SetSRID(ST_GeomFromGeoJSON('${JSON.stringify(geojson)}'), 4326) AS geometry
 ),
