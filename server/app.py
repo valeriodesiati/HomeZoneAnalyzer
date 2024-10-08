@@ -5,7 +5,7 @@ from sqlalchemy import create_engine  # Import SQLAlchemy per la connessione al 
 from libpysal.weights import KNN  # Import libpysal per calcolare i pesi spaziali con K-Nearest Neighbors
 from esda.moran import Moran  # Import Moran per calcolare l'indice di Moran
 from shapely.ops import nearest_points  # Import nearest_points per trovare i punti più vicini
-from flask_cors import CORS
+from flask_cors import CORS # gestione cors policy
 
 app = Flask(__name__)  # Crea un'istanza dell'applicazione Flask
 #autorizzazione risorse esterne CORS policy.
@@ -54,37 +54,29 @@ def calculate_morans_i():
         data = load_data()  # Carica i dati dal database
 
         apartments_df = data['apartments']  # Ottiene i dati degli appartamenti
-        neighborhoods_df = data['neighborhoods']  # Ottiene i dati dei quartieri
+       
         # Unisce i dati di tutti i punti di interesse in un unico GeoDataFrame
         points_gdf = gpd.GeoDataFrame(pd.concat([data['schools'], data['hospitals'], data['pharmacies'], data['sports_areas'], data['green_areas'], data['libraries'], data['bus_stops'], data['bike_racks'], data['electric_stations'], data['theaters'], data['ludics']], ignore_index=True), geometry='geometry')
 
-        # Verifica che i dati abbiano non siano inesistenti
-        if apartments_df.empty or neighborhoods_df.empty:
-            return jsonify({'error': 'One or more required data tables are empty'}), 500  # Restituisce un errore se i dati sono vuoti
-
+       
         # Calcola le distanze da ogni appartamento al punto di interesse più vicino
         apartments_df['distance'] = calculate_distances(apartments_df, points_gdf)
 
-        # Calcola la distanza media ai punti di interesse per ogni appartamento
-        apartments_df['avg_distance'] = apartments_df['distance']
+       
 
-        # Unione spaziale per assegnare gli appartamenti ai quartieri (opzionale)
-        joined_df = gpd.sjoin(apartments_df, neighborhoods_df, how='left', predicate='within')
+       
+        # Calcolo del K-Nearest Neighbors per tutti gli appartamenti
+        w = KNN.from_dataframe(apartments_df, k=4)  # Crea una matrice dei pesi spaziali con k-nearest neighbors
+        moran = Moran(apartments_df['prezzo'], w)  # Calcola l'indice di Moran
 
-        # Verifica che ci siano abbastanza appartamenti per il calcolo
-        if len(joined_df) > 1:
-            # Calcolo del K-Nearest Neighbors per tutti gli appartamenti
-            w = KNN.from_dataframe(joined_df, k=4)  # Crea una matrice dei pesi spaziali con k-nearest neighbors
-            moran = Moran(joined_df['prezzo'], w)  # Calcola l'indice di Moran
-
-            # Restituisci il valore dell'indice di Moran
-            return jsonify({
-                'moran_I': moran.I,  # Indice di Moran
-                'p_value': moran.p_sim,  # p-value per verificare la significatività statistica
-                'z_score': moran.z_sim  # z-score per l'ipotesi di casualità spaziale
-            }), 200
-        else:
-            return jsonify({'error': 'Not enough data points to calculate Moran\'s I'}), 500
+            
+        # Restituisci il valore dell'indice di Moran
+        return jsonify({
+            'moran_I': moran.I,  # Indice di Moran
+            'p_value': moran.p_sim,  # p-value per verificare la significatività statistica
+            'z_score': moran.z_sim  # z-score per l'ipotesi di casualità spaziale
+        }), 200
+        
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500  # Restituisce un errore se qualcosa va storto

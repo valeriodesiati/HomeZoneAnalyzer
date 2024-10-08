@@ -1,6 +1,5 @@
 export const GET_APARTMENTS_QUERY = `
 WITH poi_distances AS (
-    -- Altri tipi di POI rimangono invariati
     SELECT a.id AS apartment_id,
            'school' AS poi_type,
            MIN(ST_Distance(a.geometry, p.geometry)) AS distance
@@ -39,11 +38,11 @@ WITH poi_distances AS (
     SELECT a.id AS apartment_id,
            'hospitals' AS poi_type,
            CASE
-               WHEN COUNT(p.id) >= 1 THEN 1
-               ELSE 5
+               WHEN COUNT(p.id) >= 1 THEN 1000
+               ELSE 5000
            END AS distance
     FROM apartments a
-    LEFT JOIN hospitals p ON ST_DWithin(a.geometry, p.geometry, 500)
+    LEFT JOIN hospitals p ON ST_DWithin(a.geometry, p.geometry, 1000)
     GROUP BY a.id
     UNION ALL
     SELECT a.id AS apartment_id,
@@ -70,8 +69,8 @@ WITH poi_distances AS (
     SELECT a.id AS apartment_id,
            'busStops' AS poi_type,
            CASE
-               WHEN COUNT(p.id) >= 2 THEN 1
-               ELSE 5
+               WHEN COUNT(p.id) >= 2 THEN 1000
+               ELSE 5000
            END AS distance
     FROM apartments a
     LEFT JOIN bus_stops p ON ST_DWithin(a.geometry, p.geometry, 300)
@@ -112,8 +111,9 @@ SELECT
 FROM apartments a
 JOIN apartment_scores ascore ON a.id = ascore.apartment_id
 ORDER BY ascore.total_weighted_distance ASC;
-
 `
+
+
 
 
 export const GET_NEIGHBOURHOOD_RANKING = `
@@ -157,11 +157,11 @@ WITH poi_distances AS (
     SELECT a.id AS apartment_id,
            'hospitals' AS poi_type,
            CASE
-               WHEN COUNT(p.id) >= 1 THEN 1
-               ELSE 5
+               WHEN COUNT(p.id) >= 1 THEN 1000
+               ELSE 5000
            END AS distance
     FROM apartments a
-    LEFT JOIN hospitals p ON ST_DWithin(a.geometry, p.geometry, 500)
+    LEFT JOIN hospitals p ON ST_DWithin(a.geometry, p.geometry, 1000)
     GROUP BY a.id
     UNION ALL
     SELECT a.id AS apartment_id,
@@ -188,8 +188,8 @@ WITH poi_distances AS (
     SELECT a.id AS apartment_id,
            'busStops' AS poi_type,
            CASE
-               WHEN COUNT(p.id) >= 2 THEN 1
-               ELSE 5
+               WHEN COUNT(p.id) >= 2 THEN 1000
+               ELSE 5000
            END AS distance
     FROM apartments a
     LEFT JOIN bus_stops p ON ST_DWithin(a.geometry, p.geometry, 300)
@@ -241,4 +241,3 @@ JOIN neighborhoods q ON aq.quartiere_id = q.cod_quar
 GROUP BY q.cod_quar, q.quartiere, geom
 ORDER BY score ASC
 `
-   

@@ -25,6 +25,8 @@ import * as d3Interpolate from 'd3-interpolate';
 import LoadingOverlay from './LoadingOverlay'; 
 // import di mapbox
 import mapboxgl from 'mapbox-gl';
+
+import {PYTHON_URL,JS_URL} from '../prova.js'
 // token di mapbox
 mapboxgl.accessToken = 'pk.eyJ1IjoiZXNzZWVlZWVlZWVlZWVlZSIsImEiOiJjbHR0dDRpd2QwY2lwMnBvdThqNTlud2xxIn0.JKesOWYFKHZP3y_T2TLVUw';
 
@@ -183,7 +185,7 @@ const Map: React.FC<MapProps> = ({ surveyData }) => {
       if(event.layer instanceof L.Polygon){
         axios
           //invio del poligono al server per l'eleaborazione
-          .post('http://localhost:31527/shape/polygon', event.layer.toGeoJSON())
+          .post(JS_URL + '/shape/polygon', event.layer.toGeoJSON())
           .then((response) => {
             response.data.forEach((item: { st_asgeojson: string,prezzo:number,quartiere:string,indirizzo:string }) => {
               let geojson = JSON.parse(item.st_asgeojson);
@@ -255,7 +257,7 @@ const Map: React.FC<MapProps> = ({ surveyData }) => {
       setLoading(true);
 
       //chiamata get per recuperare i quartieri
-      axios.get('http://localhost:31527/quartieri')
+      axios.get(JS_URL + '/quartieri')
         .then((quartieri) => {
           //punteggio minimo
           const minScore = Math.min(...quartieri.data.map((item: any) => item.score));
@@ -300,7 +302,7 @@ const Map: React.FC<MapProps> = ({ surveyData }) => {
     // Fcontrollo se quartieri sono stati caricati
     if (!isApartmentsLoaded && isQuartieriLoaded) {
       //chiamata get per recuperare i quartieri
-      axios.get('http://localhost:31527/apartments')
+      axios.get(JS_URL + '/apartments')
         .then((apartments) => {
           //punteggio minimo
           const minScore = Math.min(...apartments.data.map((item: any) => item.score));
@@ -340,12 +342,12 @@ const Map: React.FC<MapProps> = ({ surveyData }) => {
 
   //invio voti sondaggio
   useEffect(() => {
-    axios.post('http://localhost:31527/', Object.fromEntries(surveyData));
+    axios.post(JS_URL + '/', Object.fromEntries(surveyData));
   }, [surveyData]);
 
   // hook per il calcolo degli indici di moran suddivisi per quartiere
   useEffect(()=>{
-    axios.get('http://localhost:32499/calculate_morans_i')
+    axios.get( PYTHON_URL + '/calculate_morans_i')
        .then((response)=>{
         setMoransData(response.data)
        })
@@ -427,7 +429,7 @@ const Map: React.FC<MapProps> = ({ surveyData }) => {
             // ottenimento poligono
             let geom = response.data.features[0].geometry;
             //invio del poligono al mio server che gestisce il fetch dei vari marker dei PoI interni ad esso
-            axios.post('http://localhost:31527/isochrone',geom).then((response=>{
+            axios.post(JS_URL + '/isochrone',geom).then((response=>{
             
               let markerIcon;
               let urlIcon='';
@@ -500,17 +502,17 @@ const Map: React.FC<MapProps> = ({ surveyData }) => {
 
   //funzione che effettua le chiamate per ricavare i punti di interesse suddivisi per tipologia
   const loadPoI = () => {
-    loadFeatureGroupData('aree_verdi', 'http://localhost:31527/aree_verdi', 'https://www.svgrepo.com/show/500085/tree.svg');
-    loadFeatureGroupData('scuole', 'http://localhost:31527/scuole', 'https://www.svgrepo.com/show/398258/school.svg');
-    loadFeatureGroupData('sport', 'http://localhost:31527/sport', 'https://www.svgrepo.com/show/475554/gym.svg');
-    loadFeatureGroupData('farmacie', 'http://localhost:31527/farmacie', 'https://www.svgrepo.com/show/475523/pharmacy.svg');
-    loadFeatureGroupData('biblioteche', 'http://localhost:31527/biblioteche', 'https://www.svgrepo.com/show/395907/books.svg');
-    loadFeatureGroupData('ospedali', 'http://localhost:31527/ospedali', 'https://www.svgrepo.com/show/500071/hospital.svg');
-    loadFeatureGroupData('biciclette', 'http://localhost:31527/biciclette', 'https://www.svgrepo.com/show/105391/bycicle.svg');
-    loadFeatureGroupData('teatri_Cinema', 'http://localhost:31527/teatri_Cinema', 'https://www.svgrepo.com/show/418375/cinema-dessert-fastfood.svg');
-    loadFeatureGroupData('ludico', 'http://localhost:31527/ludico', 'https://www.svgrepo.com/show/475275/star.svg');
-    loadFeatureGroupData('colonnine_Elettriche', 'http://localhost:31527/colonnine_Elettriche', 'https://www.svgrepo.com/show/396360/electric-plug.svg');
-    loadFeatureGroupData('fermate_Bus', 'http://localhost:31527/fermate_Bus', 'https://www.svgrepo.com/show/500067/bus-stop.svg');
+    loadFeatureGroupData('aree_verdi', JS_URL + '/aree_verdi', 'https://www.svgrepo.com/show/500085/tree.svg');
+    loadFeatureGroupData('scuole', JS_URL + '/scuole', 'https://www.svgrepo.com/show/398258/school.svg');
+    loadFeatureGroupData('sport', JS_URL + '/sport', 'https://www.svgrepo.com/show/475554/gym.svg');
+    loadFeatureGroupData('farmacie', JS_URL + '/farmacie', 'https://www.svgrepo.com/show/475523/pharmacy.svg');
+    loadFeatureGroupData('biblioteche', JS_URL + '/biblioteche', 'https://www.svgrepo.com/show/395907/books.svg');
+    loadFeatureGroupData('ospedali', JS_URL + '/ospedali', 'https://www.svgrepo.com/show/500071/hospital.svg');
+    loadFeatureGroupData('biciclette', JS_URL + '/biciclette', 'https://www.svgrepo.com/show/105391/bycicle.svg');
+    loadFeatureGroupData('teatri_Cinema', JS_URL + '/teatri_Cinema', 'https://www.svgrepo.com/show/418375/cinema-dessert-fastfood.svg');
+    loadFeatureGroupData('ludico', JS_URL + '/ludico', 'https://www.svgrepo.com/show/475275/star.svg');
+    loadFeatureGroupData('colonnine_Elettriche', JS_URL + '/colonnine_Elettriche', 'https://www.svgrepo.com/show/396360/electric-plug.svg');
+    loadFeatureGroupData('fermate_Bus', JS_URL + '/fermate_Bus', 'https://www.svgrepo.com/show/500067/bus-stop.svg');
   };
 
   // esecuzione del fetching dei punti di interesse
