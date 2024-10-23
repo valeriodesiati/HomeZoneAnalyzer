@@ -26,9 +26,16 @@ import LoadingOverlay from './LoadingOverlay';
 // import di mapbox
 import mapboxgl from 'mapbox-gl';
 
-import {PYTHON_URL,JS_URL} from '../prova.js'
+import { PYTHON_URL, JS_URL } from '../prova.js'
+
+// Carica il file .env
+require('dotenv').config();
+
+// Utilizza le variabili d'ambiente
+const mapboxToken = process.env.MAPBOX_TOKEN;
+
 // token di mapbox
-mapboxgl.accessToken = 'pk.eyJ1IjoiZXNzZWVlZWVlZWVlZWVlZSIsImEiOiJjbHR0dDRpd2QwY2lwMnBvdThqNTlud2xxIn0.JKesOWYFKHZP3y_T2TLVUw';
+mapboxgl.accessToken = mapboxToken;
 
 // props per passare la mappa da Survey a Map
 interface MapProps {
